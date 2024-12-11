@@ -33,6 +33,10 @@ function RelayButton({ url, selected, onClick }: { url: string; selected: boolea
 
 const recommendedRelays = [
   "wss://relay.btcforplebs.com",
+  "wss://relay.damus.io",
+  "wss://relay.primal.net",
+  "wss://relay.snort.social",
+  "wss://lightningrelay.com",
 ];
 const defaultRelaySelection = new Set(["wss://relay.btcforplebs.com"]);
 
