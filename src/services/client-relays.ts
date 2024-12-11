@@ -13,13 +13,12 @@ export const recommendedReadRelays = new RelaySet(
     "wss://relay.damus.io/",
     "wss://nostr.wine/",
     "wss://relay.snort.social/",
-    "wss://nos.lol/",
-    "wss://purplerelay.com/",
-    "wss://nostr.land/",
+    "wss://lightningrelay.com/",
+    "wss://relay.btcforplebs.com"
   ]),
 );
 export const recommendedWriteRelays = new RelaySet(
-  safeRelayUrls(["wss://relay.damus.io/", "wss://nos.lol/", "wss://purplerelay.com/"]),
+  safeRelayUrls(["wss://relay.damus.io/", "wss://relay.btcforplebs.com", "wss://relay.snort.social"]),
 );
 
 class ClientRelayService {
