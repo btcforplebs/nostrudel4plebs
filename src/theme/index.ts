@@ -25,7 +25,7 @@ export default function buildTheme(
 ) {
   const theme = extendTheme(getTheme(themeName), {
     colors: {
-      primary: pallet(chroma.scale([chroma(primaryColor).brighten(1), chroma(primaryColor).darken(1)]).colors(10)),
+      primary: #FDAD01,
     },
     components: {
       Container: containerTheme,
