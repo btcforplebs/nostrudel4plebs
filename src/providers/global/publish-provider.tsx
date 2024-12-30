@@ -2,6 +2,7 @@ import { PropsWithChildren, createContext, useCallback, useContext, useMemo, use
 import { useToast } from "@chakra-ui/react";
 import { EventTemplate, NostrEvent, UnsignedEvent, kinds } from "nostr-tools";
 import { includeClientTag } from "applesauce-factory/operations";
+import { addSeenRelay } from "applesauce-core/helpers";
 
 import { useSigningContext } from "./signing-provider";
 import { DraftNostrEvent } from "../../types/nostr-event";
@@ -15,10 +16,8 @@ import deleteEventService from "../../services/delete-events";
 import localSettings from "../../services/local-settings";
 import { NEVER_ATTACH_CLIENT_TAG, NIP_89_CLIENT_APP } from "../../const";
 import { eventStore } from "../../services/event-store";
-import { addPubkeyRelayHints } from "../../helpers/nostr/post";
 import useCurrentAccount from "../../hooks/use-current-account";
 import { useUserOutbox } from "../../hooks/use-user-mailboxes";
-import { addSeenRelay } from "applesauce-core/helpers";
 
 type PublishContextType = {
   log: PublishAction[];
@@ -70,25 +69,7 @@ export default function PublishProvider({ children }: PropsWithChildren) {
   const outBoxes = useUserOutbox(account?.pubkey);
 
   const finalizeDraft = useCallback<PublishContextType["finalizeDraft"]>(
-    async (event: EventTemplate | NostrEvent) => {
-      let draft = cloneEvent(event.kind, event);
-
-      // add pubkey relay hints
-      draft = addPubkeyRelayHints(draft);
-
-      // add client tag
-      if (
-        localSettings.addClientTag.value &&
-        !NEVER_ATTACH_CLIENT_TAG.includes(draft.kind) &&
-        !draft.tags.some((t) => t[0] === "client")
-      ) {
-        // TODO: this should be removed when all events are created using the event factory
-        draft = await includeClientTag(NIP_89_CLIENT_APP.name, NIP_89_CLIENT_APP.address)(draft, {});
-      }
-
-      // request signature
-      return await signerFinalize(draft);
-    },
+    (event: EventTemplate | NostrEvent) => signerFinalize(event),
     [signerFinalize],
   );
 

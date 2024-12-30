@@ -12,9 +12,9 @@ import dayjs from "dayjs";
 import { kinds } from "nostr-tools";
 import { getValue } from "applesauce-core/observable";
 import { getInboxes, getInvoice, getOutboxes, safeRelayUrls } from "applesauce-core/helpers";
+import { getZapSplits } from "applesauce-core/helpers/zap";
 
 import { DraftNostrEvent, NostrEvent, isDTag } from "../../types/nostr-event";
-import { getZapSplits } from "../../helpers/nostr/zaps";
 import { unique } from "../../helpers/array";
 import relayScoreboardService from "../../services/relay-scoreboard";
 import { getEventCoordinate, isReplaceable } from "../../helpers/nostr/event";
@@ -25,7 +25,7 @@ import signingService from "../../services/signing";
 import accountService from "../../services/account";
 import PayStep from "./pay-step";
 import UserLink from "../user/user-link";
-import { getEventRelayHints } from "../../services/event-relay-hint";
+import { getEventRelayHints } from "../../services/relay-hints";
 import { eventStore, queryStore } from "../../services/event-store";
 
 export type PayRequest = { invoice?: string; pubkey: string; error?: any };
@@ -122,7 +122,7 @@ async function getPayRequestsForEvent(
   fallbackPubkey?: string,
   additionalRelays?: Iterable<string>,
 ) {
-  const splits = getZapSplits(event, fallbackPubkey);
+  const splits = getZapSplits(event) ?? (fallbackPubkey ? [{ pubkey: fallbackPubkey, percent: 1, weight: 1 }] : []);
 
   const draftZapRequests: PayRequest[] = [];
   for (const { pubkey, percent } of splits) {

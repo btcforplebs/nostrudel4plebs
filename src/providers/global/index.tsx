@@ -31,22 +31,22 @@ function ThemeProviders({ children }: { children: React.ReactNode }) {
 // Top level providers, should be render as close to the root as possible
 export const GlobalProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <QueryStoreProvider store={queryStore}>
+    <QueryStoreProvider queryStore={queryStore}>
       <ThemeProviders>
         <SigningProvider>
-          <EventFactoryProvider>
-            <PublishProvider>
-              <NotificationsProvider>
-                <DMTimelineProvider>
-                  <DefaultEmojiProvider>
-                    <UserEmojiProvider>
+          <PublishProvider>
+            <NotificationsProvider>
+              <DMTimelineProvider>
+                <DefaultEmojiProvider>
+                  <UserEmojiProvider>
+                    <EventFactoryProvider>
                       <WebOfTrustProvider>{children}</WebOfTrustProvider>
-                    </UserEmojiProvider>
-                  </DefaultEmojiProvider>
-                </DMTimelineProvider>
-              </NotificationsProvider>
-            </PublishProvider>
-          </EventFactoryProvider>
+                    </EventFactoryProvider>
+                  </UserEmojiProvider>
+                </DefaultEmojiProvider>
+              </DMTimelineProvider>
+            </NotificationsProvider>
+          </PublishProvider>
         </SigningProvider>
       </ThemeProviders>
     </QueryStoreProvider>
