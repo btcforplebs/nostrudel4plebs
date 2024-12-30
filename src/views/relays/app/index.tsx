@@ -23,12 +23,8 @@ import { safeRelayUrls } from "../../../helpers/relay";
 import HoverLinkOverlay from "../../../components/hover-link-overlay";
 import useReplaceableEvent from "../../../hooks/use-replaceable-event";
 
-const JapaneseRelays = safeRelayUrls([
-  "wss://r.kojira.io",
-  "wss://nrelay-jp.c-stellar.net",
-  "wss://nostr.fediverse.jp",
-  "wss://nostr.holybea.com",
-  "wss://relay-jp.nostr.wirednet.jp",
+const BTCforPlebsRelay = safeRelayUrls([
+  "wss://relay.btcforplebs.com"
 ]);
 
 function RelaySetCard({ label, read, write }: { label: string; read: Iterable<string>; write: Iterable<string> }) {
@@ -168,7 +164,7 @@ export default function AppRelays() {
       </Heading>
       <SimpleGrid columns={{ base: 1, lg: 2, xl: 3 }} spacing="2">
         <RelaySetCard label="Popular Relays" read={recommendedReadRelays} write={recommendedWriteRelays} />
-        <RelaySetCard label="Japanese relays" read={JapaneseRelays} write={JapaneseRelays} />
+        <RelaySetCard label="BTCforPlebs Relay" read={BTCforPlebsRelay} write={BTCforPlebsRelay} />
       </SimpleGrid>
     </Flex>
   );
