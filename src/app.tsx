@@ -50,7 +50,7 @@ import UserListsTab from "./views/user/lists";
 import UserGoalsTab from "./views/user/goals";
 import MutedByView from "./views/user/muted-by";
 import UserArticlesTab from "./views/user/articles";
-import UserDMsTab from "./views/user/dms";
+import UserMessagesTab from "./views/user/messages";
 const UserTorrentsTab = lazy(() => import("./views/user/torrents"));
 
 import ListsHomeView from "./views/lists";
@@ -69,12 +69,6 @@ const GoalDetailsView = lazy(() => import("./views/goals/goal-details"));
 const BadgesView = lazy(() => import("./views/badges"));
 const BadgesBrowseView = lazy(() => import("./views/badges/browse"));
 const BadgeDetailsView = lazy(() => import("./views/badges/badge-details"));
-
-const CommunitiesHomeView = lazy(() => import("./views/communities"));
-const CommunityFindByNameView = lazy(() => import("./views/community/find-by-name"));
-const CommunityView = lazy(() => import("./views/community/index"));
-const CommunityPendingView = lazy(() => import("./views/community/views/pending"));
-const CommunityNewestView = lazy(() => import("./views/community/views/newest"));
 
 import RelaysView from "./views/relays";
 import RelayView from "./views/relays/relay";
@@ -124,7 +118,6 @@ const EventConsoleView = lazy(() => import("./views/tools/event-console"));
 const EventPublisherView = lazy(() => import("./views/tools/event-publisher"));
 const DMTimelineView = lazy(() => import("./views/tools/dm-timeline"));
 const TransformNoteView = lazy(() => import("./views/tools/transform-note"));
-const SatelliteCDNView = lazy(() => import("./views/tools/satellite-cdn"));
 const CorrectionsFeedView = lazy(() => import("./views/tools/corrections"));
 const NoStrudelUsersView = lazy(() => import("./views/tools/nostrudel-users/index"));
 
@@ -258,6 +251,11 @@ const router = createHashRouter([
     children: [
       {
         path: "new",
+        element: (
+          <RequireCurrentAccount>
+            <Outlet />
+          </RequireCurrentAccount>
+        ),
         children: [
           { path: "", element: <NewView /> },
           { path: "note", element: <NewNoteView /> },
@@ -286,7 +284,7 @@ const router = createHashRouter([
           { path: "relays", element: <UserRelaysTab /> },
           { path: "reports", element: <UserReportsTab /> },
           { path: "muted-by", element: <MutedByView /> },
-          { path: "dms", element: <UserDMsTab /> },
+          { path: "dms", element: <UserMessagesTab /> },
           { path: "torrents", element: <UserTorrentsTab /> },
         ],
       },
@@ -433,7 +431,6 @@ const router = createHashRouter([
           { path: "network-dm-graph", element: <NetworkDMGraphView /> },
           { path: "dm-timeline", element: <DMTimelineView /> },
           { path: "transform/:id", element: <TransformNoteView /> },
-          { path: "satellite-cdn", element: <SatelliteCDNView /> },
           { path: "unknown", element: <UnknownTimelineView /> },
           { path: "console", element: <EventConsoleView /> },
           { path: "corrections", element: <CorrectionsFeedView /> },
@@ -456,29 +453,10 @@ const router = createHashRouter([
         ],
       },
       {
-        path: "communities",
-        children: [{ path: "", element: <CommunitiesHomeView /> }],
-      },
-      {
         path: "articles",
         children: [
           { path: "", element: <ArticlesHomeView /> },
           { path: ":naddr", element: <ArticleView /> },
-        ],
-      },
-      {
-        path: "c/:community",
-        children: [
-          { path: "", element: <CommunityFindByNameView /> },
-          {
-            path: ":pubkey",
-            element: <CommunityView />,
-            children: [
-              { path: "", element: <CommunityNewestView /> },
-              { path: "newest", element: <CommunityNewestView /> },
-              { path: "pending", element: <CommunityPendingView /> },
-            ],
-          },
         ],
       },
       {

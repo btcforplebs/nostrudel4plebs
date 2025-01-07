@@ -6,7 +6,6 @@ import {
   ArticleIcon,
   BookmarkIcon,
   ChannelsIcon,
-  CommunityIcon,
   DirectMessagesIcon,
   EmojiPacksIcon,
   ListsIcon,
@@ -110,8 +109,6 @@ const KnownKinds: KnownKind[] = [
   { kind: kinds.Handlerinformation, name: "Application" },
   { kind: kinds.Handlerrecommendation, name: "App recommendation" },
 
-  { kind: kinds.CommunityDefinition, icon: CommunityIcon, name: "Communities" },
-
   { kind: kinds.BadgeAward, name: "Badge Award" },
 
   { kind: kinds.LiveChatMessage, icon: MessageSquare02, name: "Stream Chat" },
@@ -184,9 +181,9 @@ export default function UserRecentEvents({ pubkey }: { pubkey: string }) {
     authors: [pubkey],
     limit: 100,
   });
+  const all = useDisclosure();
 
   // const recent = useStoreQuery(TimelineQuery, [{ authors: [pubkey], limit: 100 }]);
-  const all = useDisclosure();
 
   const byKind = recent?.reduce(
     (dir, event) => {
@@ -206,11 +203,16 @@ export default function UserRecentEvents({ pubkey }: { pubkey: string }) {
     <Flex gap="2" wrap="wrap">
       {byKind &&
         Object.entries(byKind)
-          .filter(([_, { known }]) => (known ? known.hidden !== true : true))
+          .filter(([_, { known }]) => (!!known || all.isOpen) && (known ? known.hidden !== true : true))
           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
           .map(([kind, { events, known }]) => (
             <EventKindButton key={kind} kind={parseInt(kind)} events={events} pubkey={pubkey} known={known} />
           ))}
+      {!all.isOpen && (
+        <Button variant="link" p="4" onClick={all.onOpen}>
+          Show more ({Object.entries(byKind).filter(([_, { known }]) => !!known).length})
+        </Button>
+      )}
     </Flex>
   );
 }
