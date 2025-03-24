@@ -15,6 +15,11 @@ export default defineConfig({
     target: ["chrome89", "edge89", "firefox89", "safari15"],
     sourcemap: true,
   },
+  server: {
+    allowedHosts: [
+      "nostr.btcforplebs.com",
+    ],
+  },
   plugins: [
     react(),
     tsconfigPaths(),
