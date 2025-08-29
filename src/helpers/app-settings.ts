@@ -77,7 +77,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   // display
   theme: "default",
   colorMode: "system",
-  primaryColor: "#8DB600",
+  primaryColor: "#FDAD01",
   maxPageWidth: "none",
   showPubkeyColor: "avatar",
   removeEmojisInUsernames: false,
