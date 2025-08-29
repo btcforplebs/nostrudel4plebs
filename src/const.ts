@@ -40,20 +40,13 @@ export const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
 ];
 
 export const RECOMMENDED_RELAYS = normalizeRelayURLs([
+  "wss://relay.btcforplebs.com/",
   "wss://relay.damus.io/",
   "wss://nostr.wine/",
-  "wss://relay.snort.social/",
   "wss://nos.lol/",
   "wss://nostr.land/",
 ]);
 
-export const RECOMMENDED_JAPANESE_RELAYS = normalizeRelayURLs([
-  "wss://r.kojira.io",
-  "wss://nrelay-jp.c-stellar.net",
-  "wss://nostr.fediverse.jp",
-  "wss://nostr.holybea.com",
-  "wss://relay-jp.nostr.wirednet.jp",
-]);
 
 export const NOSTR_CONNECT_PERMISSIONS = [
   "get_public_key",
@@ -77,7 +70,7 @@ export const NIP_89_CLIENT_APP: EventFactoryClient = {
   },
 };
 
-export const LOCAL_RELAY_URL = "ws://localhost:4869/";
+export const LOCAL_RELAY_URL = "ws://192.168.4.82:7777";
 
 export const SOCIAL_GRAPH_DOWNLOAD_URL =
   "https://github.com/mmalmi/nostr-social-graph/releases/download/v1.0.5/large_social_graph.json";
