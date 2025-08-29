@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
 import {
   Button,
+  ButtonGroup,
   Code,
   Flex,
   Heading,
-  IconButton,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -21,50 +20,53 @@ import {
   Tr,
   useDisclosure,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon } from "@chakra-ui/icons";
+import { addRelayHintsToPointer, getCoordinateFromAddressPointer } from "applesauce-core/helpers";
+import { useActiveAccount } from "applesauce-react/hooks";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
-import { getCoordinateFromAddressPointer } from "applesauce-core/helpers";
+import { EventTemplate, NostrEvent } from "nostr-tools";
+import { AddressPointer } from "nostr-tools/nip19";
+import { useEffect, useMemo, useState } from "react";
 
+import DebugEventButton from "../../../components/debug-modal/debug-event-button";
+import DVMFeedFavoriteButton from "../../../components/dvm/dvm-feed-favorite-button";
+import SimpleView from "../../../components/layout/presets/simple-view";
+import RequireActiveAccount from "../../../components/router/require-active-account";
+import Timestamp from "../../../components/timestamp";
 import {
+  chainJobs,
   DVM_CONTENT_DISCOVERY_JOB_KIND,
   DVM_CONTENT_DISCOVERY_RESULT_KIND,
   DVM_STATUS_KIND,
   flattenJobChain,
-  chainJobs,
   groupEventsIntoJobs,
 } from "../../../helpers/nostr/dvm";
-import { DraftNostrEvent } from "../../../types/nostr-event";
-import VerticalPageLayout from "../../../components/vertical-page-layout";
-import useTimelineLoader from "../../../hooks/use-timeline-loader";
+import useAddressableEvent from "../../../hooks/use-addressable-event";
 import { useReadRelays } from "../../../hooks/use-client-relays";
-import { useActiveAccount } from "applesauce-react/hooks";
-import RequireActiveAccount from "../../../components/router/require-active-account";
-import { CodeIcon } from "../../../components/icons";
-import DebugChains from "./components/debug-chains";
-import Feed from "./components/feed";
-import { AddressPointer } from "nostr-tools/nip19";
 import useParamsAddressPointer from "../../../hooks/use-params-address-pointer";
-import DVMParams from "./components/dvm-params";
+import useTimelineLoader from "../../../hooks/use-timeline-loader";
 import { useUserOutbox } from "../../../hooks/use-user-mailboxes";
 import { usePublishEvent } from "../../../providers/global/publish-provider";
-import Timestamp from "../../../components/timestamp";
+import DebugChains from "./components/debug-chains";
+import DVMAvatar from "./components/dvm-avatar";
+import { DVMName } from "./components/dvm-name";
+import Feed from "./components/feed";
 
-function DVMFeedPage({ pointer }: { pointer: AddressPointer }) {
+function DVMFeedPage({ pointer, dvm }: { pointer: AddressPointer; dvm?: NostrEvent }) {
   const [since] = useState(() => dayjs().subtract(1, "day").unix());
   const publish = usePublishEvent();
-  const navigate = useNavigate();
   const account = useActiveAccount()!;
   const debugModal = useDisclosure();
 
   const dvmRelays = useUserOutbox(pointer.pubkey);
   const readRelays = useReadRelays(dvmRelays);
-  const { loader, timeline } = useTimelineLoader(`${getCoordinateFromAddressPointer(pointer)}-jobs`, readRelays, {
+  const { timeline } = useTimelineLoader(`${getCoordinateFromAddressPointer(pointer)}-jobs`, readRelays, {
     authors: [account.pubkey, pointer.pubkey],
     "#p": [account.pubkey, pointer.pubkey],
     kinds: [DVM_CONTENT_DISCOVERY_JOB_KIND, DVM_CONTENT_DISCOVERY_RESULT_KIND, DVM_STATUS_KIND],
     since,
   });
+
+  const pointerWithRelays = useMemo(() => addRelayHintsToPointer(pointer, dvmRelays), [pointer, dvmRelays]);
 
   const jobs = groupEventsIntoJobs(timeline);
   const pages = chainJobs(Array.from(Object.values(jobs)));
@@ -76,7 +78,7 @@ function DVMFeedPage({ pointer }: { pointer: AddressPointer }) {
     setRequesting(true);
 
     const paramTags = Object.entries(params).map(([key, value]) => ["param", key, value]);
-    const draft: DraftNostrEvent = {
+    const draft: EventTemplate = {
       kind: DVM_CONTENT_DISCOVERY_JOB_KIND,
       created_at: dayjs().unix(),
       content: "",
@@ -96,19 +98,36 @@ function DVMFeedPage({ pointer }: { pointer: AddressPointer }) {
   }, [timeline.length]);
 
   return (
-    <VerticalPageLayout>
-      <Flex gap="2">
-        <Button leftIcon={<ChevronLeftIcon boxSize={6} />} onClick={() => navigate(-1)}>
-          Back
-        </Button>
-        <DVMParams pointer={pointer} params={params} onChange={setParams} />
-        <Button onClick={requestNewFeed} isLoading={requesting} colorScheme="primary">
-          New Feed
-        </Button>
-        <IconButton icon={<CodeIcon />} ml="auto" aria-label="View Raw" title="View Raw" onClick={debugModal.onOpen} />
-      </Flex>
-
-      {jobChains[0] && <Feed chain={jobChains[0]} pointer={pointer} />}
+    <SimpleView
+      title={
+        <Flex gap="2" alignItems="center">
+          <DVMAvatar pointer={pointer} w="10" />
+          <DVMName pointer={pointer} />
+        </Flex>
+      }
+      actions={
+        <ButtonGroup ms="auto" variant="ghost">
+          <Button onClick={requestNewFeed} isLoading={requesting} colorScheme="primary">
+            New Feed
+          </Button>
+          <DVMFeedFavoriteButton pointer={pointer} />
+          {dvm && <DebugEventButton event={dvm} />}
+        </ButtonGroup>
+      }
+      center
+      maxW="container.xl"
+    >
+      {jobChains[0] ? (
+        <Feed chain={jobChains[0]} pointer={pointerWithRelays} />
+      ) : (
+        <Flex direction="column" alignItems="center" justifyContent="center" flex={1}>
+          <Heading>Request a new feed</Heading>
+          <Text>DVM feeds require you to sign an event to request a new feed of notes.</Text>
+          <Button onClick={requestNewFeed} isLoading={requesting} colorScheme="primary" size="lg" mt="4">
+            New Feed
+          </Button>
+        </Flex>
+      )}
 
       {debugModal.isOpen && (
         <Modal isOpen onClose={debugModal.onClose} size="full">
@@ -166,16 +185,17 @@ function DVMFeedPage({ pointer }: { pointer: AddressPointer }) {
           </ModalContent>
         </Modal>
       )}
-    </VerticalPageLayout>
+    </SimpleView>
   );
 }
 
 export default function DVMFeedView() {
   const pointer = useParamsAddressPointer("addr");
+  const dvm = useAddressableEvent(pointer);
 
   return (
     <RequireActiveAccount>
-      <DVMFeedPage pointer={pointer} />
+      <DVMFeedPage pointer={pointer} dvm={dvm} />
     </RequireActiveAccount>
   );
 }

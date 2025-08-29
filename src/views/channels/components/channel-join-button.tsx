@@ -1,10 +1,9 @@
 import { useCallback } from "react";
 import dayjs from "dayjs";
-import { kinds } from "nostr-tools";
+import { EventTemplate, kinds, NostrEvent } from "nostr-tools";
 import { Button, ButtonProps } from "@chakra-ui/react";
-
-import { DraftNostrEvent, NostrEvent } from "../../../types/nostr-event";
 import { useActiveAccount } from "applesauce-react/hooks";
+
 import { listAddEvent, listRemoveEvent } from "../../../helpers/nostr/lists";
 import useUserChannelsList from "../../../hooks/use-user-channels-list";
 import { usePublishEvent } from "../../../providers/global/publish-provider";
@@ -15,7 +14,7 @@ export default function ChannelJoinButton({
 }: Omit<ButtonProps, "children"> & { channel: NostrEvent }) {
   const publish = usePublishEvent();
   const account = useActiveAccount();
-  const { list, pointers } = useUserChannelsList(account?.pubkey);
+  const { list, pointers } = useUserChannelsList(account && { pubkey: account.pubkey });
 
   const isSubscribed = pointers.find((e) => e.id === channel.id);
 
@@ -27,7 +26,7 @@ export default function ChannelJoinButton({
       tags: list?.tags ?? [],
     };
 
-    let draft: DraftNostrEvent;
+    let draft: EventTemplate;
     if (isSubscribed) {
       draft = listRemoveEvent(favList, channel);
     } else {

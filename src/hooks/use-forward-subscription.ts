@@ -1,38 +1,20 @@
+import { mapEventsToStore } from "applesauce-core";
+import { useObservableMemo } from "applesauce-react/hooks";
+import { useEventStore } from "applesauce-react/hooks/use-event-store";
+import { onlyEvents } from "applesauce-relay";
+import hash_sum from "hash-sum";
 import { nanoid } from "nanoid";
 import { Filter } from "nostr-tools";
-import { useEffect, useMemo } from "react";
-import { createRxForwardReq } from "rx-nostr";
-import hash from "hash-sum";
+import { useMemo } from "react";
+import pool from "../services/pool";
 
-import rxNostr from "../services/rx-nostr";
-import { useEventStore } from "applesauce-react/hooks/use-event-store";
-
-export default function useForwardSubscription(relays?: string[], filters?: Filter | Filter[]) {
+export default function useSimpleSubscription(relays?: string[], filters?: Filter | Filter[]) {
   const eventStore = useEventStore();
   const id = useMemo(() => nanoid(10), []);
-  const rxReq = useMemo(() => createRxForwardReq(id), [id]);
 
-  // attach to rxNostr
-  const observable = useMemo(() => rxNostr.use(rxReq, { on: { relays } }), [rxReq, relays?.join(",")]);
-
-  // subscribe
-  // NOTE: have to subscribe before emitting filter
-  useEffect(() => {
-    const sub = observable.subscribe((packet) => {
-      eventStore.add(packet.event, packet.from);
-    });
-
-    return () => sub.unsubscribe();
-  }, [observable, eventStore]);
-
-  // update filters
-  useEffect(() => {
-    if (filters) {
-      if (Array.isArray(filters)) {
-        if (filters.length > 0) rxReq.emit(filters);
-      } else rxReq.emit([filters]);
-    }
-  }, [rxReq, hash(filters)]);
-
-  return observable;
+  return useObservableMemo(
+    () =>
+      relays && filters && pool.subscription(relays, filters, { id }).pipe(onlyEvents(), mapEventsToStore(eventStore)),
+    [hash_sum(relays), hash_sum(filters), id, eventStore],
+  );
 }

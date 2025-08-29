@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -21,29 +20,26 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { NostrEvent, UnsignedEvent, verifyEvent } from "nostr-tools";
+import { useEffect, useState } from "react";
 
-import VerticalPageLayout from "../../../components/vertical-page-layout";
-import BackButton from "../../../components/router/back-button";
-import Play from "../../../components/icons/play";
-import EventJsonEditor from "./components/json-editor";
-import { getVariables, LooseEventTemplate, processEvent, Variable } from "./process";
-import { EditIcon, WritingIcon } from "../../../components/icons";
-import { useSigningContext } from "../../../providers/global/signing-provider";
-import { usePublishEvent } from "../../../providers/global/publish-provider";
 import { useActiveAccount } from "applesauce-react/hooks";
-import UserAvatar from "../../../components/user/user-avatar";
-import { RelayUrlInput } from "../../../components/relay-url-input";
-import { TEMPLATES } from "./templates";
-import RequireActiveAccount from "../../../components/router/require-active-account";
-import VariableEditor from "./components/variable-editor";
-import EventTemplateEditor from "./components/event-template-editor";
-import useRouteStateValue from "../../../hooks/use-route-state-value";
+import { EditIcon, WritingIcon } from "../../../components/icons";
+import Play from "../../../components/icons/play";
 import SimpleView from "../../../components/layout/presets/simple-view";
+import { RelayUrlInput } from "../../../components/relay-url-input";
+import RequireActiveAccount from "../../../components/router/require-active-account";
+import UserAvatar from "../../../components/user/user-avatar";
+import useRouteStateValue from "../../../hooks/use-route-state-value";
+import { usePublishEvent } from "../../../providers/global/publish-provider";
+import EventTemplateEditor from "./components/event-template-editor";
+import EventJsonEditor from "./components/json-editor";
+import VariableEditor from "./components/variable-editor";
+import { getVariables, LooseEventTemplate, processEvent, Variable } from "./process";
+import { TEMPLATES } from "./templates";
 
 function EventPublisherPage({ initDraft }: { initDraft?: LooseEventTemplate }) {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
-  const { requestSignature } = useSigningContext();
   const publish = usePublishEvent();
   const account = useActiveAccount()!;
   const customRelay = useDisclosure();
@@ -90,7 +86,7 @@ function EventPublisherPage({ initDraft }: { initDraft?: LooseEventTemplate }) {
   const sign = async () => {
     if (!finalized) return;
     try {
-      setFinalized(await requestSignature(finalized));
+      setFinalized(await account.signEvent(finalized));
     } catch (e) {
       if (e instanceof Error) toast({ description: e.message, status: "error" });
     }
@@ -103,7 +99,7 @@ function EventPublisherPage({ initDraft }: { initDraft?: LooseEventTemplate }) {
       let event: NostrEvent;
 
       if ((finalized as NostrEvent).sig) event = finalized as NostrEvent;
-      else event = await requestSignature(processEvent(finalized, variables, account));
+      else event = await account.signEvent(processEvent(finalized, variables, account));
 
       const valid = verifyEvent(event);
       if (!valid) throw new Error("Invalid event");

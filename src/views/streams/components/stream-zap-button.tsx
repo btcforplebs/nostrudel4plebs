@@ -4,9 +4,8 @@ import { NostrEvent } from "nostr-tools";
 import { LightningIcon } from "../../../components/icons";
 import useUserLNURLMetadata from "../../../hooks/use-user-lnurl-metadata";
 import ZapModal from "../../../components/event-zap-modal";
-import useStreamGoal from "../../../hooks/use-stream-goal";
 import { useReadRelays } from "../../../hooks/use-client-relays";
-import { useAdditionalRelayContext } from "../../../providers/local/additional-relay-context";
+import { useAdditionalRelayContext } from "../../../providers/local/additional-relay";
 import { getStreamHost } from "../../../helpers/nostr/stream";
 
 export default function StreamZapButton({
@@ -24,7 +23,6 @@ export default function StreamZapButton({
   const zapModal = useDisclosure();
   const zapMetadata = useUserLNURLMetadata(host);
   const relays = useReadRelays(useAdditionalRelayContext());
-  const goal = useStreamGoal(stream);
 
   const commonProps = {
     "aria-label": "Zap stream",

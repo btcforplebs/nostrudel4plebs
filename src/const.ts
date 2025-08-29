@@ -1,11 +1,12 @@
 import { EventFactoryClient } from "applesauce-factory";
 import { isSafeRelayURL } from "applesauce-core/helpers/relays";
 import { normalizeURL } from "applesauce-core/helpers";
-import { kinds } from "nostr-tools";
 
 function normalizeRelayURLs(relays: string[]) {
   return relays.filter(isSafeRelayURL).map(normalizeURL);
 }
+
+export const DEFAULT_SHARE_SERVICE = "https://njump.me/";
 
 export const DEFAULT_SEARCH_RELAYS = normalizeRelayURLs([
   "wss://relay.nostr.band",
@@ -14,10 +15,10 @@ export const DEFAULT_SEARCH_RELAYS = normalizeRelayURLs([
   "wss://filter.nostr.wine",
 ]);
 export const WIKI_RELAYS = normalizeRelayURLs(["wss://relay.wikifreedia.xyz/"]);
-export const COMMON_CONTACT_RELAYS = normalizeRelayURLs(["wss://purplepag.es/"]);
+export const DEFAULT_LOOKUP_RELAYS = normalizeRelayURLs(["wss://purplepag.es/"]);
 
 export const DEFAULT_SIGNAL_RELAYS = normalizeRelayURLs(["wss://nostrue.com/", "wss://relay.damus.io"]);
-export const DEFAULT_NOSTR_CONNECT_RELAYS = normalizeRelayURLs(["wss://relay.nsec.app/"]);
+export const DEFAULT_NOSTR_CONNECT_RELAY = normalizeURL("wss://relay.nsec.app/");
 
 export const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
   {
@@ -38,21 +39,15 @@ export const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
   },
 ];
 
-export const RECOMMENDED_READ_RELAYS = normalizeRelayURLs([
+export const RECOMMENDED_RELAYS = normalizeRelayURLs([
   "wss://relay.damus.io/",
   "wss://nostr.wine/",
   "wss://relay.snort.social/",
   "wss://nos.lol/",
-  "wss://purplerelay.com/",
   "wss://nostr.land/",
 ]);
-export const RECOMMENDED_WRITE_RELAYS = normalizeRelayURLs([
-  "wss://relay.damus.io/",
-  "wss://nos.lol/",
-  "wss://purplerelay.com/",
-]);
 
-export const JAPANESE_RELAYS = normalizeRelayURLs([
+export const RECOMMENDED_JAPANESE_RELAYS = normalizeRelayURLs([
   "wss://r.kojira.io",
   "wss://nrelay-jp.c-stellar.net",
   "wss://nostr.fediverse.jp",
@@ -74,8 +69,6 @@ export const NOSTR_CONNECT_PERMISSIONS = [
   "sign_event:7",
 ];
 
-export const NEVER_ATTACH_CLIENT_TAG = [kinds.EncryptedDirectMessage];
-
 export const NIP_89_CLIENT_APP: EventFactoryClient = {
   name: "noStrudel",
   address: {
@@ -84,6 +77,11 @@ export const NIP_89_CLIENT_APP: EventFactoryClient = {
   },
 };
 
+export const LOCAL_RELAY_URL = "ws://localhost:4869/";
+
+export const SOCIAL_GRAPH_DOWNLOAD_URL =
+  "https://github.com/mmalmi/nostr-social-graph/releases/download/v1.0.5/large_social_graph.json";
+export const SOCIAL_GRAPH_FALLBACK_PUBKEY = "713978c3094081b34fcf2f5491733b0c22728cd3b7a6946519d40f5f08598af8";
 export const SUPPORT_PUBKEY = "713978c3094081b34fcf2f5491733b0c22728cd3b7a6946519d40f5f08598af8";
 
 export const TENOR_API_KEY = import.meta.env.VITE_TENOR_API_KEY as string | undefined;

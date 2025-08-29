@@ -2,8 +2,8 @@ import { memo } from "react";
 import { Box, BoxProps } from "@chakra-ui/react";
 import { useRenderedContent } from "applesauce-react/hooks";
 
-import { NostrEvent } from "../../../types/nostr-event";
-import { TrustProvider } from "../../../providers/local/trust-provider";
+import { NostrEvent } from "nostr-tools";
+import { ContentSettingsProvider } from "../../../providers/local/content-settings";
 import {
   renderAppleMusicUrl,
   renderGenericUrl,
@@ -50,14 +50,14 @@ const ChannelMessageContent = memo(({ message, children, ...props }: BoxProps & 
   const content = useRenderedContent(message, components, { linkRenderers, cacheKey: ChannelMessageContentSymbol });
 
   return (
-    <TrustProvider event={message}>
+    <ContentSettingsProvider event={message}>
       <LightboxProvider>
         <Box whiteSpace="pre-wrap" {...props}>
           {content}
           {children}
         </Box>
       </LightboxProvider>
-    </TrustProvider>
+    </ContentSettingsProvider>
   );
 });
 

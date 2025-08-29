@@ -1,4 +1,3 @@
-import { useCallback, useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -9,6 +8,7 @@ import {
   MenuItem,
   MenuList,
 } from "@chakra-ui/react";
+import { useCallback } from "react";
 
 import { ChevronDownIcon } from "../../../../components/icons";
 import Trash01 from "../../../../components/icons/trash-01";
@@ -25,19 +25,16 @@ export default function EnableWithDelete({
   wipe: () => Promise<void>;
   isLoading?: boolean;
 }) {
-  const [deleting, setDeleting] = useState(false);
   const wipeDatabase = useCallback(async () => {
     try {
-      setDeleting(true);
       await wipe();
       location.reload();
     } catch (error) {}
-    setDeleting(false);
   }, []);
 
   return (
     <ButtonGroup isAttached {...props}>
-      <Button colorScheme="primary" onClick={enable} isDisabled={enabled}>
+      <Button colorScheme="primary" onClick={enable} isDisabled={enabled} isLoading={isLoading}>
         {enabled ? "Enabled" : "Enable"}
       </Button>
       <Menu>

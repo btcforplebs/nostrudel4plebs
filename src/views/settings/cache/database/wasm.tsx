@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -14,34 +13,43 @@ import {
   NumberInputStepper,
   Text,
 } from "@chakra-ui/react";
+import { useObservableEagerState } from "applesauce-react/hooks";
 import { NostrEvent } from "nostr-tools";
-import { useObservable } from "applesauce-react/hooks";
+import { useCallback, useEffect, useState } from "react";
 
-import { cacheRelay$ } from "../../../../services/cache-relay";
-import WasmRelay from "../../../../services/wasm-relay";
+import { Navigate } from "react-router-dom";
 import EventKindsPieChart from "../../../../components/charts/event-kinds-pie-chart";
 import EventKindsTable from "../../../../components/charts/event-kinds-table";
-import ImportEventsButton from "./components/import-events-button";
+import { eventCache$ } from "../../../../services/event-cache";
+import localSettings from "../../../../services/preferences";
 import ExportEventsButton from "./components/export-events-button";
-import localSettings from "../../../../services/local-settings";
+import ImportEventsButton from "./components/import-events-button";
+import useAsyncAction from "../../../../hooks/use-async-action";
+import { useAsync } from "react-use";
 
 export default function WasmDatabasePage() {
-  const cacheRelay = useObservable(cacheRelay$);
-  if (!(cacheRelay instanceof WasmRelay)) return null;
-  const worker = cacheRelay.worker;
-  if (!worker) return null;
+  const eventCache = useObservableEagerState(eventCache$);
+  if (eventCache?.type !== "wasm-worker") return <Navigate to="/settings/cache" />;
+
+  const { value: worker } = useAsync(async () => {
+    const { worker } = await import("../../../../services/event-cache/wasm-worker");
+    return worker;
+  });
 
   const [summary, setSummary] = useState<Record<string, number>>();
-  const persistForDays = useObservable(localSettings.wasmPersistForDays);
+  const persistForDays = useObservableEagerState(localSettings.wasmPersistForDays);
 
   const total = summary ? Object.values(summary).reduce((t, v) => t + v, 0) : undefined;
 
   const refresh = useCallback(async () => {
+    if (!worker) return;
     await worker.summary().then((v) => setSummary(v));
   }, [setSummary, worker]);
 
   const importEvents = useCallback(
     async (events: NostrEvent[]) => {
+      if (!worker) return;
+
       const batchSize = 100;
       const queue = Array.from(events);
 
@@ -64,11 +72,15 @@ export default function WasmDatabasePage() {
     [worker],
   );
   const exportEvents = useCallback(async () => {
+    if (!worker) return [];
+
     return worker.query(["REQ", "export", {}]);
   }, [worker]);
 
   const deleteKind = useCallback(
     async (kind: string) => {
+      if (!worker) return;
+
       const k = parseInt(kind);
       if (confirm(`Are you sure you want to delete all kind ${k} events?`)) {
         await worker.delete(["REQ", "delete-" + k, { kinds: [k] }]);
@@ -78,21 +90,14 @@ export default function WasmDatabasePage() {
     [worker, refresh],
   );
 
-  const [deleting, setDeleting] = useState(false);
-  const deleteDatabase = useCallback(async () => {
-    try {
-      setDeleting(true);
-      if (cacheRelay instanceof WasmRelay) {
-        await cacheRelay.wipe();
-        location.reload();
-      }
-    } catch (error) {}
-    setDeleting(false);
-  }, [cacheRelay]);
+  const deleteDatabase = useAsyncAction(async () => {
+    await eventCache.clear?.();
+    location.reload();
+  }, [eventCache]);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    if (worker) refresh();
+  }, [worker]);
 
   return (
     <>
@@ -101,7 +106,7 @@ export default function WasmDatabasePage() {
       <ButtonGroup flexWrap="wrap">
         <ImportEventsButton onLoad={importEvents} />
         <ExportEventsButton getEvents={exportEvents} />
-        <Button colorScheme="red" onClick={deleteDatabase} isLoading={deleting}>
+        <Button colorScheme="red" onClick={deleteDatabase.run} isLoading={deleteDatabase.loading}>
           Delete database
         </Button>
       </ButtonGroup>

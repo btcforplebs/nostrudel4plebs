@@ -1,9 +1,38 @@
+import {
+  DecodeResult,
+  getAddressPointerFromATag,
+  getEventPointerFromETag,
+  getProfilePointerFromPTag,
+  isRTag,
+} from "applesauce-core/helpers";
 import dayjs from "dayjs";
-import { kinds } from "nostr-tools";
-import { DecodeResult } from "nostr-tools/nip19";
-import { getPointerFromTag } from "applesauce-core/helpers";
+import { kinds, NostrEvent } from "nostr-tools";
+import { decode } from "nostr-tools/nip19";
 
-import { NostrEvent, isRTag } from "../../types/nostr-event";
+/** @deprecated */
+export function getPointerFromTag(tag: string[]): ReturnType<typeof decode> | null {
+  try {
+    switch (tag[0]) {
+      case "e":
+        return { type: "nevent", data: getEventPointerFromETag(tag) };
+
+      case "a":
+        return {
+          type: "naddr",
+          data: getAddressPointerFromATag(tag),
+        };
+
+      case "p":
+        return { type: "nprofile", data: getProfilePointerFromPTag(tag) };
+
+      // NIP-18 quote tags
+      case "q":
+        return { type: "nevent", data: getEventPointerFromETag(tag) };
+    }
+  } catch (error) {}
+
+  return null;
+}
 
 /** @deprecated use kinds.ZapGoal */
 export const GOAL_KIND = kinds.ZapGoal;
@@ -63,7 +92,7 @@ export function getGoalEventPointers(goal: NostrEvent) {
 }
 
 export function validateGoal(goal: NostrEvent) {
-  const amount = getGoalAmount(goal);
+  getGoalAmount(goal);
   const relays = getGoalRelays(goal);
   if (relays.length) throw new Error("zero relays");
   return true;

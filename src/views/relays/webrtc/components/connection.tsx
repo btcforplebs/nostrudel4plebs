@@ -1,18 +1,17 @@
-import { useState } from "react";
-import { NostrEvent } from "nostr-tools";
 import { Button, ButtonGroup, Flex, Heading, SimpleGrid, Text, useInterval } from "@chakra-ui/react";
+import { NostrEvent } from "nostr-tools";
+import { useState } from "react";
 
-import UserAvatar from "../../../../components/user/user-avatar";
-import UserName from "../../../../components/user/user-name";
+import { useActiveAccount, useObservableEagerState } from "applesauce-react/hooks";
+import NostrWebRTCPeer from "../../../../classes/webrtc/nostr-webrtc-peer";
 import WebRtcRelayClient from "../../../../classes/webrtc/webrtc-relay-client";
 import WebRtcRelayServer from "../../../../classes/webrtc/webrtc-relay-server";
-import NostrWebRTCPeer from "../../../../classes/webrtc/nostr-webrtc-peer";
-import { cacheRelay$ } from "../../../../services/cache-relay";
-import { useActiveAccount } from "applesauce-react/hooks";
-import useUserContactList from "../../../../hooks/use-user-contact-list";
+import UserAvatar from "../../../../components/user/user-avatar";
+import UserName from "../../../../components/user/user-name";
 import { getPubkeysFromList } from "../../../../helpers/nostr/lists";
 import useForceUpdate from "../../../../hooks/use-force-update";
-import { useObservable } from "applesauce-react/hooks";
+import useUserContactList from "../../../../hooks/use-user-contact-list";
+import { eventCache$ } from "../../../../services/event-cache";
 
 export default function Connection({
   call,
@@ -25,7 +24,7 @@ export default function Connection({
   client: WebRtcRelayClient;
   server: WebRtcRelayServer;
 }) {
-  const cacheRelay = useObservable(cacheRelay$);
+  const eventCache = useObservableEagerState(eventCache$);
   const update = useForceUpdate();
   useInterval(update, 1000);
   // const toggleRead = () => {
@@ -37,16 +36,15 @@ export default function Connection({
 
   const [sending, setSending] = useState(false);
   const sendEvents = async () => {
-    if (!account?.pubkey || !cacheRelay) return;
+    if (!account?.pubkey || !eventCache) return;
 
     setSending(true);
-    const sub = cacheRelay.subscribe([{ authors: [account.pubkey] }], {
-      onevent: (event) => {
+    eventCache.read([{ authors: [account.pubkey] }]).subscribe({
+      next: (event) => {
         client.publish(event);
         update();
       },
-      oneose: () => {
-        sub.close();
+      complete: () => {
         setSending(false);
       },
     });
@@ -54,12 +52,12 @@ export default function Connection({
 
   const [requesting, setRequesting] = useState(false);
   const requestEvents = async () => {
-    if (!contacts || !cacheRelay) return;
+    if (!contacts || !eventCache) return;
 
     setRequesting(true);
     const sub = client.subscribe([{ authors: getPubkeysFromList(contacts).map((p) => p.pubkey) }], {
       onevent: (event) => {
-        if (cacheRelay) cacheRelay.publish(event);
+        if (eventCache) eventCache.write([event]);
         update();
       },
       oneose: () => {

@@ -1,8 +1,8 @@
-import { useContext, useState } from "react";
 import {
   Box,
   Button,
   ButtonGroup,
+  Flex,
   Heading,
   Input,
   Modal,
@@ -16,29 +16,24 @@ import {
   Text,
   useDisclosure,
 } from "@chakra-ui/react";
-import { nip19 } from "nostr-tools";
+import { DecodeResult, encodeDecodeResult } from "applesauce-core/helpers";
+import { useObservableState } from "applesauce-react/hooks";
+import { useContext, useState } from "react";
 import { useSet } from "react-use";
-import { encodeDecodeResult } from "applesauce-core/helpers";
 
 import { ExternalLinkIcon, SearchIcon } from "./icons";
 import UserLink from "./user/user-link";
 
-import RelayFavicon from "./relay-favicon";
-import singleEventLoader from "../services/single-event-loader";
-import replaceableEventLoader from "../services/replaceable-loader";
 import { AppHandlerContext } from "../providers/route/app-handler-provider";
-import { useObservable } from "applesauce-react/hooks";
-import { connections$ } from "../services/rx-nostr";
+import { addressLoader, eventLoader } from "../services/loaders";
+import { connections$ } from "../services/pool";
+import RelayFavicon from "./relay/relay-favicon";
 
-function SearchOnRelaysModal({
-  isOpen,
-  onClose,
-  decode,
-}: Omit<ModalProps, "children"> & { decode: nip19.DecodeResult }) {
+function SearchOnRelaysModal({ isOpen, onClose, decode }: Omit<ModalProps, "children"> & { decode: DecodeResult }) {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("");
 
-  const discoveredRelays = Object.entries(useObservable(connections$)).reduce<string[]>(
+  const discoveredRelays = Object.entries(useObservableState(connections$) ?? {}).reduce<string[]>(
     (arr, [relay, status]) => (status !== "error" ? [...arr, relay] : arr),
     [],
   );
@@ -49,17 +44,17 @@ function SearchOnRelaysModal({
     setLoading(true);
     switch (decode.type) {
       case "naddr":
-        replaceableEventLoader.next({
+        addressLoader({
           ...decode.data,
           relays: [...relays, ...(decode.data.relays ?? [])],
-          force: true,
-        });
+          cache: false,
+        }).subscribe();
         break;
       case "note":
-        singleEventLoader.next({ id: decode.data, relays: Array.from(relays) });
+        eventLoader({ id: decode.data, relays: Array.from(relays) }).subscribe();
         break;
       case "nevent":
-        singleEventLoader.next({ id: decode.data.id, relays: Array.from(relays) });
+        eventLoader({ id: decode.data.id, relays: Array.from(relays) }).subscribe();
         break;
     }
   };
@@ -74,7 +69,7 @@ function SearchOnRelaysModal({
         <ModalCloseButton />
         <ModalBody px="2" pb="2" pt="0" gap="2" display="flex" flexDirection="column">
           {loading ? (
-            <Heading size="md" mx="auto">
+            <Heading size="md" mx="auto" aria-live="polite">
               Searching {relays.size} relays...
             </Heading>
           ) : (
@@ -85,21 +80,26 @@ function SearchOnRelaysModal({
                 onChange={(e) => setFilter(e.target.value)}
                 autoFocus
                 placeholder="Filter relays"
+                aria-label="Filter relays"
               />
-              {filtered.map((relay) => (
-                <Button
-                  key={relay}
-                  variant="outline"
-                  w="full"
-                  p="2"
-                  leftIcon={<RelayFavicon relay={relay} size="xs" />}
-                  justifyContent="flex-start"
-                  colorScheme={relays.has(relay) ? "primary" : undefined}
-                  onClick={() => (relays.has(relay) ? actions.remove(relay) : actions.add(relay))}
-                >
-                  {relay}
-                </Button>
-              ))}
+              <Flex direction="column" role="list" aria-label="Available relays">
+                {filtered.map((relay) => (
+                  <Button
+                    key={relay}
+                    variant="outline"
+                    w="full"
+                    p="2"
+                    leftIcon={<RelayFavicon relay={relay} size="xs" />}
+                    justifyContent="flex-start"
+                    colorScheme={relays.has(relay) ? "primary" : undefined}
+                    onClick={() => (relays.has(relay) ? actions.remove(relay) : actions.add(relay))}
+                    role="listitem"
+                    aria-pressed={relays.has(relay)}
+                  >
+                    {relay}
+                  </Button>
+                ))}
+              </Flex>
             </>
           )}
         </ModalBody>
@@ -109,7 +109,7 @@ function SearchOnRelaysModal({
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button colorScheme="primary" onClick={searchForEvent} isLoading={loading}>
+            <Button colorScheme="primary" onClick={searchForEvent} isLoading={loading} aria-label="Search for event">
               Search
             </Button>
           </ButtonGroup>
@@ -119,7 +119,7 @@ function SearchOnRelaysModal({
   );
 }
 
-export default function LoadingNostrLink({ link }: { link: nip19.DecodeResult }) {
+export default function LoadingNostrLink({ link }: { link: DecodeResult }) {
   const { openAddress } = useContext(AppHandlerContext);
   const address = encodeDecodeResult(link);
   const details = useDisclosure();
@@ -176,6 +176,8 @@ export default function LoadingNostrLink({ link }: { link: nip19.DecodeResult })
         fontFamily="monospace"
         whiteSpace="pre"
         onClick={details.onToggle}
+        aria-expanded={details.isOpen}
+        aria-controls="nostr-link-details"
       >
         [{details.isOpen ? "-" : "+"}]
         <Text as="span" isTruncated>
@@ -183,14 +185,27 @@ export default function LoadingNostrLink({ link }: { link: nip19.DecodeResult })
         </Text>
       </Button>
       {details.isOpen && (
-        <Box px="2" fontFamily="monospace" color="GrayText" fontWeight="bold" fontSize="sm">
+        <Box
+          id="nostr-link-details"
+          px="2"
+          fontFamily="monospace"
+          color="GrayText"
+          fontWeight="bold"
+          fontSize="sm"
+          role="region"
+          aria-label="Link details"
+        >
           <Text>Type: {link.type}</Text>
           {renderDetails()}
           <ButtonGroup variant="link" size="sm" my="1">
-            <Button leftIcon={<SearchIcon />} colorScheme="primary" onClick={search.onOpen}>
+            <Button leftIcon={<SearchIcon />} colorScheme="primary" onClick={search.onOpen} aria-label="Find event">
               Find
             </Button>
-            <Button leftIcon={<ExternalLinkIcon />} onClick={() => openAddress(address)}>
+            <Button
+              leftIcon={<ExternalLinkIcon />}
+              onClick={() => openAddress(address)}
+              aria-label="Open in new window"
+            >
               Open
             </Button>
           </ButtonGroup>

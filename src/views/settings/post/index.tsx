@@ -1,35 +1,36 @@
-import { Link as RouterLink } from "react-router-dom";
 import {
-  Flex,
-  FormControl,
-  FormLabel,
-  FormHelperText,
-  Input,
-  Button,
-  Select,
-  Link,
   Alert,
+  AlertDescription,
   AlertIcon,
   AlertTitle,
-  AlertDescription,
+  Button,
+  Flex,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  Input,
+  Link,
+  Select,
   Switch,
 } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservableEagerState } from "applesauce-react/hooks";
+import { Link as RouterLink } from "react-router-dom";
 
-import useUsersMediaServers from "../../../hooks/use-user-media-servers";
 import { useActiveAccount } from "applesauce-react/hooks";
-import useSettingsForm from "../use-settings-form";
-import localSettings from "../../../services/local-settings";
 import SimpleView from "../../../components/layout/presets/simple-view";
+import useUsersMediaServers from "../../../hooks/use-user-blossom-servers";
+import localSettings from "../../../services/preferences";
+import useSettingsForm from "../use-settings-form";
 
 export default function PostSettings() {
   const account = useActiveAccount();
   const { register, getValues, watch, submit, formState } = useSettingsForm();
-  const { servers: mediaServers } = useUsersMediaServers(account?.pubkey);
+  const mediaServers = useUsersMediaServers(account?.pubkey);
 
   watch("mediaUploadService");
 
-  const addClientTag = useObservable(localSettings.addClientTag);
+  const addClientTag = useObservableEagerState(localSettings.addClientTag);
+  const alwaysAuthUpload = useObservableEagerState(localSettings.alwaysAuthUpload);
 
   return (
     <SimpleView
@@ -120,11 +121,25 @@ export default function PostSettings() {
       <FormControl>
         <Flex alignItems="center">
           <FormLabel htmlFor="mirrorBlobsOnShare" mb="0">
-            Always mirror media
+            Mirror media when sharing
           </FormLabel>
           <Switch id="mirrorBlobsOnShare" {...register("mirrorBlobsOnShare")} />
         </Flex>
-        <FormHelperText>Copy all media to your personal blossom servers when sharing notes</FormHelperText>
+        <FormHelperText>Mirror all media to your personal blossom servers when sharing notes</FormHelperText>
+      </FormControl>
+
+      <FormControl>
+        <Flex alignItems="center">
+          <FormLabel htmlFor="alwaysAuthUpload" mb="0">
+            Always authenticate media uploads
+          </FormLabel>
+          <Switch
+            id="alwaysAuthUpload"
+            isChecked={alwaysAuthUpload}
+            onChange={() => localSettings.alwaysAuthUpload.next(!localSettings.alwaysAuthUpload.value)}
+          />
+        </Flex>
+        <FormHelperText>Always authenticate with media servers when uploading media</FormHelperText>
       </FormControl>
     </SimpleView>
   );

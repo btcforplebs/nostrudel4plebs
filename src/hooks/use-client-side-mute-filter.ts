@@ -1,21 +1,26 @@
-import { useCallback } from "react";
 import { useActiveAccount } from "applesauce-react/hooks";
+import { NostrEvent } from "nostr-tools";
+import { useCallback } from "react";
 
-import useWordMuteFilter from "./use-mute-word-filter";
+import { shouldHideEvent } from "../services/event-policies";
 import useUserMuteFilter from "./use-user-mute-filter";
-import { NostrEvent } from "../types/nostr-event";
 
-export default function useClientSideMuteFilter() {
+/** Returns Whether the event should be hidden in the UI */
+export default function useClientSideMuteFilter(user?: string): (event: NostrEvent) => boolean {
   const account = useActiveAccount();
+  user = user || account?.pubkey;
 
-  const wordMuteFilter = useWordMuteFilter();
-  const mustListFilter = useUserMuteFilter(account?.pubkey);
+  const muteListFilter = useUserMuteFilter(user);
 
   return useCallback(
     (event: NostrEvent) => {
-      if (event.pubkey === account?.pubkey) return false;
-      return wordMuteFilter(event) || mustListFilter(event);
+      // Never mute the users own events
+      if (event.pubkey === user) return false;
+      if (muteListFilter(event)) return true;
+      if (shouldHideEvent(event)) return true;
+
+      return false;
     },
-    [wordMuteFilter, mustListFilter, account?.pubkey],
+    [muteListFilter],
   );
 }

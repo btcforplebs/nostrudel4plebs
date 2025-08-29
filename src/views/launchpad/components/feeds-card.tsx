@@ -10,28 +10,29 @@ import {
   LinkBox,
   Text,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import { kinds } from "nostr-tools";
-
-import useUserSets from "../../../hooks/use-user-lists";
-import { NostrEvent } from "../../../types/nostr-event";
-import { getListName, getPubkeysFromList } from "../../../helpers/nostr/lists";
-import UserAvatar from "../../../components/user/user-avatar";
+import { getProfilePointersFromList } from "applesauce-core/helpers";
 import { useActiveAccount } from "applesauce-react/hooks";
+import { kinds, NostrEvent } from "nostr-tools";
+import { Link as RouterLink } from "react-router-dom";
+import { useMemo } from "react";
+
 import HoverLinkOverlay from "../../../components/hover-link-overlay";
-import { getEventCoordinate, getEventUID } from "../../../helpers/nostr/event";
 import Plus from "../../../components/icons/plus";
-import useUserContactList from "../../../hooks/use-user-contact-list";
-import useRecentIds from "../../../hooks/use-recent-ids";
+import UserAvatar from "../../../components/user/user-avatar";
+import { getEventCoordinate, getEventUID } from "../../../helpers/nostr/event";
+import { getListTitle } from "../../../helpers/nostr/lists";
 import useFavoriteLists from "../../../hooks/use-favorite-lists";
+import useRecentIds from "../../../hooks/use-recent-ids";
+import useUserContactList from "../../../hooks/use-user-contact-list";
+import useUserSets from "../../../hooks/use-user-lists";
 
 function Feed({ list, ...props }: { list: NostrEvent } & Omit<CardProps, "children">) {
-  const people = getPubkeysFromList(list);
+  const people = useMemo(() => getProfilePointersFromList(list), [list]);
 
   return (
     <Card as={LinkBox} {...props}>
       <CardHeader p="4" fontWeight="bold">
-        {getListName(list)}
+        {getListTitle(list)}
       </CardHeader>
       <CardBody px="4" pt="0" pb="4" overflow="hidden" display="flex" gap="2" alignItems="center">
         <AvatarGroup>
@@ -49,7 +50,7 @@ function Feed({ list, ...props }: { list: NostrEvent } & Omit<CardProps, "childr
 export default function FeedsCard({ ...props }: Omit<CardProps, "children">) {
   const account = useActiveAccount();
   const contacts = useUserContactList(account?.pubkey);
-  const myLists = useUserSets(account?.pubkey).filter((list) => list.kind === kinds.Followsets);
+  const myLists = useUserSets(account?.pubkey)?.filter((list) => list.kind === kinds.Followsets) ?? [];
   const { lists: favoriteLists } = useFavoriteLists(account?.pubkey);
 
   const { recent: recentFeeds, useThing: useFeed } = useRecentIds("feeds", 4);

@@ -10,41 +10,41 @@ import {
   Progress,
   Spinner,
 } from "@chakra-ui/react";
+import { useObservableState } from "applesauce-react/hooks";
+import { PublishResponse } from "applesauce-relay";
 import { Link as RouterLink } from "react-router-dom";
-import { useObservable } from "applesauce-react/hooks";
-import { OkPacketAgainstEvent } from "rx-nostr";
 
-import { RelayPaidTag } from "../../relays/components/relay-card";
-import { EmbedEvent } from "../../../components/embed-event";
+import { EmbedEventCard } from "../../../components/embed-event/card";
 import { PublishLogEntry } from "../../../providers/global/publish-provider";
+import { RelayPaidTag } from "../../relays/components/relay-card";
 
-function PublishResultRow({ packet }: { packet: OkPacketAgainstEvent }) {
+function PublishResultRow({ response }: { response: PublishResponse }) {
   return (
-    <Alert status={packet.ok ? "success" : "warning"}>
+    <Alert status={response.ok ? "success" : "warning"}>
       <AlertIcon />
       <Box>
         <AlertTitle>
-          <Link as={RouterLink} to={`/relays/${encodeURIComponent(packet.from)}`}>
-            {packet.from}
+          <Link as={RouterLink} to={`/relays/${encodeURIComponent(response.from)}`}>
+            {response.from}
           </Link>
-          <RelayPaidTag url={packet.from} />
+          <RelayPaidTag url={response.from} />
         </AlertTitle>
-        {packet.notice && <AlertDescription>{packet.notice}</AlertDescription>}
+        {response.message && <AlertDescription>{response.message}</AlertDescription>}
       </Box>
     </Alert>
   );
 }
 
 export function PublishLogEntryDetails({ entry }: { entry: PublishLogEntry } & Omit<FlexProps, "children">) {
-  const { relays } = useObservable(entry);
+  const relayStatus = useObservableState(entry.relayStatus$) ?? {};
 
   return (
     <Flex direction="column" gap="2">
-      <EmbedEvent event={entry.event} />
-      <Progress value={(Object.keys(relays).length / entry.relays.length) * 100} size="lg" hasStripe />
-      {Object.entries(relays).map(([url, packet]) =>
-        packet ? (
-          <PublishResultRow key={url} packet={packet} />
+      <EmbedEventCard event={entry.event} />
+      <Progress value={(Object.keys(relayStatus).length / entry.relays.length) * 100} size="lg" hasStripe />
+      {Object.entries(relayStatus).map(([url, response]) =>
+        response ? (
+          <PublishResultRow key={url} response={response} />
         ) : (
           <Alert key={url} status="info">
             <Spinner mr="2" />

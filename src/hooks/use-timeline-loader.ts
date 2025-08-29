@@ -1,13 +1,12 @@
-import { useEffect, useMemo } from "react";
-import { useStoreQuery } from "applesauce-react/hooks";
-import { useEventStore } from "applesauce-react/hooks/use-event-store";
-import { Queries } from "applesauce-core";
-import { Filter, NostrEvent } from "nostr-tools";
-import { useThrottle } from "react-use";
+import { TimelineModel } from "applesauce-core/models";
+import { useEventModel } from "applesauce-react/hooks";
 import sum from "hash-sum";
+import { Filter, NostrEvent } from "nostr-tools";
+import { useMemo } from "react";
+import { useThrottle } from "react-use";
 
 import timelineCacheService from "../services/timeline-cache";
-import useForwardSubscription from "./use-forward-subscription";
+import useSimpleSubscription from "./use-forward-subscription";
 
 type Options = {
   eventFilter?: (event: NostrEvent) => boolean;
@@ -20,21 +19,13 @@ export default function useTimelineLoader(
   opts?: Options,
 ) {
   // start a forward subscription while component is mounted
-  useForwardSubscription(relays, filters);
+  useSimpleSubscription(relays, filters);
 
-  const eventStore = useEventStore();
   const loader = useMemo(() => {
     if (filters) return timelineCacheService.createTimeline(key, relays, Array.isArray(filters) ? filters : [filters]);
   }, [key, sum(filters), relays.join(",")]);
 
-  // start and stop loader
-  useEffect(() => {
-    const sub = loader?.subscribe((event) => eventStore.add(event));
-
-    return () => sub?.unsubscribe();
-  }, [eventStore, loader]);
-
-  const timeline = useStoreQuery(Queries.TimelineQuery, filters && [filters]) ?? [];
+  const timeline = useEventModel(TimelineModel, filters && [filters]) ?? [];
   let throttled = useThrottle(timeline, 50);
 
   // set event filter

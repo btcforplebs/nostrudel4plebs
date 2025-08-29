@@ -1,46 +1,55 @@
-import rxNostr from "./rx-nostr";
 import accounts from "./accounts";
-import channelMetadataService from "./channel-metadata-loader";
-import { eventStore, queryStore } from "./event-store";
-import localSettings from "./local-settings";
+import { eventCache$ } from "./event-cache";
+import { eventStore } from "./event-store";
+import {
+  addressLoader,
+  channelMetadataLoader,
+  eventLoader,
+  profileLoader,
+  reactionsLoader,
+  userSetsLoader,
+  zapsLoader,
+} from "./loaders";
+import pool from "./pool";
+import localSettings from "./preferences";
 import readStatusService from "./read-status";
 import relayInfoService from "./relay-info";
-import replaceableEventLoader from "./replaceable-loader";
 import timelineCacheService from "./timeline-cache";
 import { userSearchDirectory } from "./username-search";
-import singleEventLoader from "./single-event-loader";
-import userSetsLoader from "./user-sets-loader";
 
 const noStrudel = {
-  rxNostr,
+  /** Connection pool */
+  pool,
 
   /**
    * Internal applesauce EventStore
    * @see https://hzrd149.github.io/applesauce/classes/applesauce_core.EventStore.html
    */
   eventStore,
-  /**
-   * Internal applesauce QueryStore
-   * @see https://hzrd149.github.io/applesauce/classes/applesauce_core.QueryStore.html
-   */
-  queryStore,
 
   /** Account management */
   accounts,
 
+  get eventCache() {
+    return eventCache$.value;
+  },
+
   // other internal services
-  replaceableEventLoader,
-  singleEventLoader,
+  profileLoader,
+  addressLoader,
+  eventLoader,
+  zapsLoader,
+  reactionsLoader,
   userSetsLoader,
+  channelMetadataLoader,
   userSearchDirectory,
   readStatusService,
   relayInfoService,
-  channelMetadataService,
   timelineCacheService,
-  localSettings,
+  localSettings: localSettings,
 };
 
-localSettings.debugApi.subscribe((enabled) => {
+localSettings.enableDebugApi.subscribe((enabled) => {
   if (enabled) Reflect.set(window, "noStrudel", noStrudel);
   // @ts-expect-error debug
   else delete window.noStrudel;

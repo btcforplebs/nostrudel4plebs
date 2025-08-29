@@ -31,6 +31,8 @@ import Rocket02 from "../icons/rocket-02";
 import PuzzlePiece01 from "../icons/puzzle-piece-01";
 import Users02 from "../icons/users-02";
 import Wallet02 from "../icons/wallet-02";
+import Users01 from "../icons/users-01";
+import MessageChatCircle from "../icons/message-chat-circle";
 
 export type App = {
   icon?: ComponentWithAs<"svg", IconProps>;
@@ -76,13 +78,19 @@ export const internalApps: App[] = [
     to: "/groups",
   },
   {
+    title: "Relay Chat",
+    description: "Simple dissapearing chat on relays",
+    icon: MessageChatCircle,
+    id: "relay-chat",
+    to: "/relay-chat",
+  },
+  {
     title: "Pictures",
     description: "Browser picture posts",
     icon: MediaIcon,
     id: "pictures",
     to: "/pictures",
   },
-  // { title: "Podcasts", description: "Social podcasts", icon: Podcast, id: "podcasts", to: "/podcasts" },
   { title: "Wiki", description: "Browse wiki pages", icon: WikiIcon, id: "wiki", to: "/wiki" },
   {
     title: "Channels",
@@ -96,7 +104,13 @@ export const internalApps: App[] = [
   { title: "Torrents", description: "Browse torrents on nostr", icon: TorrentIcon, id: "torrents", to: "/torrents" },
   { title: "Emojis", description: "Create custom emoji packs", icon: EmojiPacksIcon, id: "emojis", to: "/emojis" },
   { title: "Bookmarks", description: "Manage your bookmarks", icon: BookmarkIcon, id: "bookmarks", to: "/bookmarks" },
-  { title: "Lists", description: "Browse and create lists", icon: ListsIcon, id: "lists", to: "/lists" },
+  {
+    title: "Lists",
+    description: "Lists of people and notes",
+    icon: Users01,
+    id: "lists",
+    to: "/lists",
+  },
   { title: "Tracks", description: "Browse stemstr tracks", icon: TrackIcon, id: "tracks", to: "/tracks" },
   { title: "Videos", description: "Browse videos", icon: VideoIcon, id: "videos", to: "/videos" },
   { title: "Articles", description: "Browse articles", icon: ArticleIcon, id: "articles", to: "/articles" },
@@ -160,7 +174,7 @@ export const internalTools: App[] = [
     description: "A feed of post edits",
     icon: Edit04,
     id: "corrections",
-    to: "/tools/corrections ",
+    to: "/tools/corrections",
   },
   {
     title: "noStrudel Users",
@@ -242,14 +256,6 @@ export const externalTools: App[] = [
     description: "Upload code snippets to nostr",
     to: "https://nosbin.com/",
     image: "https://nosbin.com/logo.png",
-    isExternal: true,
-  },
-  {
-    id: "blossom.hzrd149.com",
-    title: "Blossom Drive",
-    description: "Upload and organize blobs",
-    to: "https://blossom.hzrd149.com/",
-    image: "https://blossom.hzrd149.com/pwa-192x192.png",
     isExternal: true,
   },
   {

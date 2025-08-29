@@ -1,13 +1,13 @@
 import { LinkBox, Text } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservableEagerState } from "applesauce-react/hooks";
 
 import HoverLinkOverlay from "../../../../components/hover-link-overlay";
 import RouterLink from "../../../../components/router-link";
 import Timestamp from "../../../../components/timestamp";
-import { notices$ } from "../../../../services/rx-nostr";
+import { notices$ } from "../../../../services/pool";
 
 export default function NoticesTab() {
-  const notices = useObservable(notices$);
+  const notices = useObservableEagerState(notices$);
 
   return (
     <>
@@ -16,7 +16,7 @@ export default function NoticesTab() {
           <HoverLinkOverlay as={RouterLink} to={`/relays/${encodeURIComponent(notice.from)}`} fontWeight="bold">
             {notice.from}
           </HoverLinkOverlay>
-          <Timestamp timestamp={notice.timestamp} ml={2} />
+          <Timestamp timestamp={notice.timestamp.getTime() / 1000} ml={2} />
           <Text fontFamily="monospace">{notice.message}</Text>
         </LinkBox>
       ))}

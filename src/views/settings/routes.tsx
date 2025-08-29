@@ -1,31 +1,26 @@
-import { lazy } from "react";
-import { Outlet, RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import RequireActiveAccount from "../../components/router/require-active-account";
 
 import SettingsView from ".";
-import DisplaySettings from "./display";
 import AccountSettings from "./accounts";
+import AuthenticationSettingsView from "./authentication";
+import BackgroundWorkerSettings from "./background-worker";
+import CacheRelayView from "./cache";
+import DisplaySettings from "./display";
+import DnsIdentityView from "./dns-identity";
+import LightningSettings from "./lightning";
 import MailboxesView from "./mailboxes";
 import MediaServersView from "./media-servers";
-import SearchRelaysView from "./search";
-import AppRelaysView from "./relays";
-import CacheRelayView from "./cache";
+import MessagesSettings from "./messages";
+import MutesSettings from "./mutes";
+import ContentPoliciesSettings from "./content";
 import PostSettings from "./post";
 import PrivacySettings from "./privacy";
-import LightningSettings from "./lightning";
+import AppRelaysView from "./relays";
+import SearchSettings from "./search";
+import SocialGraphView from "./social-graph";
+import ProfileSettingsView from "./profile";
 import PerformanceSettings from "./performance";
-import AuthenticationSettingsView from "./authentication";
-import DnsIdentityView from "./dns-identity";
-
-// bakery settings
-const BakeryConnectView = lazy(() => import("./bakery/connect"));
-const RequireBakery = lazy(() => import("../../components/router/require-bakery"));
-const BakeryGeneralSettingsView = lazy(() => import("./bakery/general-settings"));
-const BakeryAuthView = lazy(() => import("./bakery/connect/auth"));
-const NotificationSettingsView = lazy(() => import("./bakery/notifications"));
-const RequireBakeryAuth = lazy(() => import("../../components/router/require-bakery-auth"));
-const BakeryNetworkSettingsView = lazy(() => import("./bakery/network"));
-const BakeryServiceLogsView = lazy(() => import("./bakery/service-logs"));
 
 export default [
   {
@@ -41,41 +36,30 @@ export default [
           </RequireActiveAccount>
         ),
       },
+      {
+        path: "profile",
+        element: (
+          <RequireActiveAccount>
+            <ProfileSettingsView />
+          </RequireActiveAccount>
+        ),
+      },
       { path: "mailboxes", Component: MailboxesView },
       { path: "identity", Component: DnsIdentityView },
       { path: "authentication", Component: AuthenticationSettingsView },
       { path: "media-servers", Component: MediaServersView },
-      { path: "search-relays", Component: SearchRelaysView },
+      { path: "search", Component: SearchSettings },
       { path: "relays", Component: AppRelaysView },
+      { path: "social-graph", Component: SocialGraphView },
+      { path: "mutes", Component: MutesSettings },
+      { path: "content", Component: ContentPoliciesSettings },
+      { path: "performance", Component: PerformanceSettings },
       { path: "cache", Component: CacheRelayView },
       { path: "post", Component: PostSettings },
       { path: "privacy", Component: PrivacySettings },
       { path: "lightning", Component: LightningSettings },
-      { path: "performance", Component: PerformanceSettings },
-
-      { path: "bakery/connect", Component: BakeryConnectView },
-      {
-        path: "bakery",
-        element: (
-          <RequireBakery>
-            <Outlet />
-          </RequireBakery>
-        ),
-        children: [
-          { index: true, Component: BakeryGeneralSettingsView },
-          { path: "auth", Component: BakeryAuthView },
-          { path: "notifications", Component: NotificationSettingsView },
-          {
-            path: "network",
-            element: (
-              <RequireBakeryAuth>
-                <BakeryNetworkSettingsView />
-              </RequireBakeryAuth>
-            ),
-          },
-          { path: "logs", Component: BakeryServiceLogsView },
-        ],
-      },
+      { path: "messages", Component: MessagesSettings },
+      { path: "background-worker", Component: BackgroundWorkerSettings },
     ],
   },
 ] satisfies RouteObject[];

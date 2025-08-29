@@ -4,7 +4,7 @@ import { EventPointer } from "nostr-tools/nip19";
 import { Card, CardBody, CardHeader, CardProps, Flex, Heading, LinkBox, Spinner, Text } from "@chakra-ui/react";
 
 import useChannelMetadata from "../../../hooks/use-channel-metadata";
-import { NostrEvent } from "../../../types/nostr-event";
+import { NostrEvent } from "nostr-tools";
 import HoverLinkOverlay from "../../../components/hover-link-overlay";
 import useSingleEvent from "../../../hooks/use-single-event";
 import { useReadRelays } from "../../../hooks/use-client-relays";
@@ -17,7 +17,7 @@ export default function ChannelCard({
   ...props
 }: Omit<CardProps, "children"> & { channel: NostrEvent; additionalRelays?: Iterable<string> }) {
   const readRelays = useReadRelays(additionalRelays);
-  const metadata = useChannelMetadata(channel.id, readRelays);
+  const metadata = useChannelMetadata(channel, readRelays);
 
   const ref = useEventIntersectionRef(channel);
 
@@ -43,7 +43,7 @@ export default function ChannelCard({
 }
 
 export function PointerChannelCard({ pointer, ...props }: Omit<CardProps, "children"> & { pointer: EventPointer }) {
-  const channel = useSingleEvent(pointer.id, pointer.relays);
+  const channel = useSingleEvent(pointer);
   if (!channel) return <Spinner />;
   return <ChannelCard channel={channel} {...props} />;
 }

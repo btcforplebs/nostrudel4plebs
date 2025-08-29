@@ -3,7 +3,7 @@ import { Outlet, OutletProps, useMatch } from "react-router-dom";
 import { Flex, FlexProps, Spinner } from "@chakra-ui/react";
 
 import { useBreakpointValue } from "../../../providers/global/breakpoint-provider";
-import SimpleHeader from "./simple-header";
+import SimpleHeader from "../components/simple-header";
 import { ErrorBoundary } from "../../error-boundary";
 import useScrollRestoreRef from "../../../hooks/use-scroll-restore";
 
@@ -28,13 +28,13 @@ export default function SimpleParentView({
   context?: OutletProps["context"];
 }>) {
   const match = useMatch(path);
-  const isMobile = useBreakpointValue({ base: true, lg: false });
+  const isMobile = useBreakpointValue({ base: true, xl: false });
   const showMenu = !isMobile || !!match;
 
   const ref = useScrollRestoreRef("parent");
 
   return (
-    <Flex data-type="parent-view" h="full" overflow="hidden" direction={{ base: "column", lg: "row" }}>
+    <Flex data-type="parent-view" h="full" overflow="hidden" direction={{ base: "column", xl: "row" }}>
       {showMenu && (
         <Flex w={{ base: "full", lg: width }} direction="column" overflow="hidden" h="full" flexShrink={0}>
           {title && <SimpleHeader title={title}>{actions}</SimpleHeader>}

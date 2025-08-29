@@ -1,5 +1,108 @@
 # nostrudel
 
+## 0.46.1
+
+### Patch Changes
+
+- 2e02dce: Fix issue with application hanging from capacitorjs modules
+- 8bb958c: Fix elements under nav bar on mobile
+
+## 0.46.0
+
+### Minor Changes
+
+- 61ec618: Add option for custom share service (njump.me)
+- e4befec: Add article reader component using native web TTS API
+- b114c2a: Show favorite relays in discovery view
+- b114c2a: Add relay feed to discovery view
+- 5df6134: Redesign user profile navigation
+
+### Patch Changes
+
+- 9219f47: Fix open graph link images not being blured
+- 9219f47: Fix ncrypsec accounts not prompting for decryption password
+
+## 0.45.1
+
+### Patch Changes
+
+- 50d7153: Fix recalculating the social graph every 15s
+
+## 0.45.0
+
+### Minor Changes
+
+- da4935f: Add setting for NIP-17 DM relays
+- c18959f: Add messages cache for direct messages
+- e555ff2: Support NIP-17 group messages
+- 98ee868: Show NIP-17 messages in direct message view
+- 4f9c5b9: Add profile editor to settings
+- 2ea2ebc: Add NIP-17 message inbox for decrypting messages
+- 4f592dc: Add DM conversation info drawer
+- 403315c: Redesign direct messages
+- 4f9c5b9: Add preview to porfile editor
+
+### Patch Changes
+
+- 5d533bc: Remove unused dependencies
+
+## 0.44.1
+
+### Patch Changes
+
+- 9a714ab: Correct `applesauce` and `blossom-client-sdk` package versions
+
+## 0.44.0
+
+### Minor Changes
+
+- 605905f: Detect `naddr1` and `nevent` links in normal web links
+- ebf622e: Improve blossom URL verify modal
+- 5027e92: Add setting to hide events based on social graph
+- 5027e92: Add option to hide media and embeds based on social graph
+- 0432b4e: Add background worker settings page
+- 5027e92: Remove keyboard shortcuts
+
+### Patch Changes
+
+- 124345b: Fix new note view spamming `getPublicKey`
+
+## 0.43.0
+
+### Minor Changes
+
+- 697d4c6: Add "Migrate to signing device" option in account manager
+- 8e25ba5: Add list edit modal
+- 0b6e8e9: Remove "open in drawer" for notes
+- 1d04e20: Remove legacy relay connection pool
+- 1167dba: Use TimelineLoader from applesauce packages
+- 1045c26: Add option to favorite apps
+- 3d7a5bd: Update task manager to reflect relay connections and auth
+- ab394aa: Add option to mirror blobs when sharing notes
+- 39bfbe8: Add simple relay chat views
+- ad4b744: Add comments under badges
+- 747b7e2: Add default auth options to task manager and app relays views
+- e92d4b3: Add max height to timeline notes
+- b25979b: Use the mute words, threads, and hashtags in the NIP-51 mute list
+- ee7a5b3: Add simple file views and comments
+- 92b9e9a: Replace amber login with NIP-46 connect
+- 931ea61: Add tenor gif picker
+- b185b0a: Remove NIP-72 communities
+- 26b376e: Add nsfw option to reply form
+- bd6e21e: Linkify BIPs
+- 508b37d: Add 404 page
+- b5a7f76: Remove legacy satellite cdn view
+- 44def1d: Fix bug with uploading blank images
+- fc2063b: Add NIP-22 comments on articles
+- 931ea61: Add new emoji picker
+- 92b9e9a: Remove mute graph tool
+- 92b9e9a: Remove DM graph tool
+- 931ea61: Remove quick reactions from settings
+
+### Patch Changes
+
+- 598b424: Fix articles view freezing on load
+
 ## 0.42.0
 
 ### Minor Changes

@@ -1,149 +1,194 @@
-import { useMemo, useState } from "react";
-import { Button, ButtonGroup, Flex, LinkBox, LinkOverlay, Text } from "@chakra-ui/react";
+import {
+  AvatarGroup,
+  Badge,
+  Button,
+  ButtonGroup,
+  Flex,
+  IconButton,
+  LinkBox,
+  LinkOverlay,
+  Text,
+} from "@chakra-ui/react";
+import { mergeRelaySets, Rumor } from "applesauce-core/helpers";
+import { GiftWrapsModel, LegacyMessagesGroups, WrappedMessagesGroups } from "applesauce-core/models";
+import { useActiveAccount, useEventModel, useObservableEagerState, useObservableState } from "applesauce-react/hooks";
+import { NostrEvent, kinds } from "nostr-tools";
+import { npubEncode } from "nostr-tools/nip19";
+import { useEffect, useMemo } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
-import { kinds, nip19 } from "nostr-tools";
-import { FixedSizeList, ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeList, ListChildComponentProps } from "react-window";
 
-import UserAvatar from "../../components/user/user-avatar";
+import { SettingsIcon } from "../../components/icons";
+import SimpleParentView from "../../components/layout/presets/simple-parent-view";
 import RequireActiveAccount from "../../components/router/require-active-account";
 import Timestamp from "../../components/timestamp";
-import { useActiveAccount } from "applesauce-react/hooks";
-import { KnownConversation, groupIntoConversations, hasResponded, identifyConversation } from "../../helpers/nostr/dms";
-import IntersectionObserverProvider from "../../providers/local/intersection-observer";
-import { useTimelineCurserIntersectionCallback } from "../../hooks/use-timeline-cursor-intersection-callback";
+import UserAvatar from "../../components/user/user-avatar";
 import UserName from "../../components/user/user-name";
-import { NostrEvent } from "../../types/nostr-event";
-import { CheckIcon } from "../../components/icons";
-import UserDnsIdentity from "../../components/user/user-dns-identity";
 import useEventIntersectionRef from "../../hooks/use-event-intersection-ref";
-import { useKind4Decrypt } from "../../hooks/use-kind4-decryption";
-import { truncateId } from "../../helpers/string";
-import useTimelineLoader from "../../hooks/use-timeline-loader";
-import useUserMailboxes from "../../hooks/use-user-mailboxes";
-import useUserContacts from "../../hooks/use-user-contacts";
-import useUserMutes from "../../hooks/use-user-mutes";
-import SimpleParentView from "../../components/layout/presets/simple-parent-view";
+import { useLegacyMessagePlaintext } from "../../hooks/use-legacy-message-plaintext";
 import useScrollRestoreRef from "../../hooks/use-scroll-restore";
-import useRouteStateValue from "../../hooks/use-route-state-value";
+import { useTimelineCurserIntersectionCallback } from "../../hooks/use-timeline-cursor-intersection-callback";
+import useTimelineLoader from "../../hooks/use-timeline-loader";
+import { useUserInbox } from "../../hooks/use-user-mailboxes";
+import IntersectionObserverProvider from "../../providers/local/intersection-observer";
+import RequireDecryptionCache from "../../providers/route/require-decryption-cache";
+import { legacyMessageSubscription, wrappedMessageSubscription } from "../../services/lifecycle";
+import localSettings from "../../services/preferences";
+import { DirectMessageRelays } from "../../models/messages";
+import ReadAuthRequiredAlert from "./components/read-auth-required-alert";
 
-export function useDirectMessagesTimeline(pubkey?: string) {
-  const mailboxes = useUserMailboxes(pubkey);
-
-  return useTimelineLoader(
-    `${truncateId(pubkey ?? "anon")}-dms`,
-    mailboxes?.inboxes ?? [],
-    pubkey
-      ? [
-          { authors: [pubkey], kinds: [kinds.EncryptedDirectMessage] },
-          { "#p": [pubkey], kinds: [kinds.EncryptedDirectMessage] },
-        ]
-      : undefined,
-  );
+function MessagePreview({ message }: { message: NostrEvent }) {
+  const { plaintext } = useLegacyMessagePlaintext(message);
+  return plaintext ? <Text isTruncated>{plaintext || "<Encrypted>"}</Text> : <Badge variant="subtle">Encrypted</Badge>;
 }
 
-function MessagePreview({ message, pubkey }: { message: NostrEvent; pubkey: string }) {
-  const ref = useEventIntersectionRef(message);
-
-  const { plaintext } = useKind4Decrypt(message);
-  return (
-    <Text isTruncated ref={ref}>
-      {plaintext || "<Encrypted>"}
-    </Text>
-  );
-}
-
-function ConversationCard({ index, style, data }: ListChildComponentProps<KnownConversation[]>) {
+function ConversationCard({ index, style, data }: ListChildComponentProps<(LegacyGroup | WrappedGroup)[]>) {
+  const account = useActiveAccount()!;
   const conversation = data[index];
 
   const location = useLocation();
-  const lastReceived = conversation.messages.find((m) => m.pubkey === conversation.correspondent);
-  const lastMessage = conversation.messages[0];
+  const lastMessage = conversation.lastMessage;
 
-  const ref = useEventIntersectionRef(lastMessage);
+  const ref = useEventIntersectionRef(lastMessage as NostrEvent);
+  const others = conversation.participants.filter((p) => p !== account.pubkey);
 
   return (
     <LinkBox as={Flex} ref={ref} style={style} gap="2" overflow="hidden" px="2">
-      <UserAvatar pubkey={conversation.correspondent} />
-      <Flex direction="column" gap="1" overflow="hidden" flex={1}>
-        <Flex gap="2" alignItems="center" overflow="hidden">
-          <UserName pubkey={conversation.correspondent} isTruncated />
-          <UserDnsIdentity onlyIcon pubkey={conversation.correspondent} />
+      <AvatarGroup size="md" max={3}>
+        {others.map((pubkey) => (
+          <UserAvatar key={pubkey} pubkey={pubkey} />
+        ))}
+      </AvatarGroup>
+      <Flex direction="column" gap="1" overflow="hidden" flex={1} py="2" alignItems="flex-start">
+        <Flex gap="2" alignItems="center" overflow="hidden" w="full">
+          <Text fontSize="sm" isTruncated>
+            {others.map((pubkey, index) => (
+              <span key={pubkey}>
+                <UserName pubkey={pubkey} />
+                {index < others.length - 1 && ", "}
+              </span>
+            ))}
+          </Text>
           <Timestamp flexShrink={0} timestamp={lastMessage.created_at} ml="auto" />
-          {hasResponded(conversation) && <CheckIcon boxSize={4} color="green.500" />}
         </Flex>
-        {lastReceived && <MessagePreview message={lastReceived} pubkey={lastReceived.pubkey} />}
+        {lastMessage.kind === kinds.EncryptedDirectMessage ? (
+          <MessagePreview message={lastMessage as NostrEvent} />
+        ) : (
+          <Text fontSize="sm" isTruncated>
+            {lastMessage.content}
+          </Text>
+        )}
       </Flex>
-      <LinkOverlay as={RouterLink} to={`/messages/${nip19.npubEncode(conversation.correspondent)}` + location.search} />
+      <LinkOverlay
+        as={RouterLink}
+        to={
+          others.length > 1
+            ? `/messages/group/${others.map(npubEncode).join(":")}`
+            : `/messages/${others.map(npubEncode).join(":")}` + location.search
+        }
+      />
     </LinkBox>
   );
 }
 
-function MessagesHomePage() {
-  const { value: filter, setValue: setFilter } = useRouteStateValue<"contacts" | "other" | "muted">("tab", "contacts");
+type LegacyGroup = NonNullable<{ id: string; participants: string[]; lastMessage: NostrEvent }>;
+type WrappedGroup = NonNullable<{ id: string; participants: string[]; lastMessage: Rumor }>;
 
+function Groups() {
   const account = useActiveAccount()!;
-  const contacts = useUserContacts(account?.pubkey, undefined, true)?.map((p) => p.pubkey);
-  const mutes = useUserMutes(account.pubkey, undefined, true);
 
-  const { timeline: messages, loader } = useDirectMessagesTimeline(account.pubkey);
+  // Subscribe to incoming messages
+  useObservableState(legacyMessageSubscription);
+  useObservableState(wrappedMessageSubscription);
 
-  const conversations = useMemo(() => {
-    const conversations = groupIntoConversations(messages).map((c) => identifyConversation(c, account.pubkey));
+  // Create a timeline loader for legacy messages
+  const legacyInboxes = useUserInbox(account.pubkey);
+  const messagesInboxes = useEventModel(DirectMessageRelays, [account.pubkey]);
+  const inboxes = useMemo(() => mergeRelaySets(legacyInboxes, messagesInboxes), [legacyInboxes, messagesInboxes]);
+  const { loader } = useTimelineLoader(`${account.pubkey}-legacy-messages`, legacyInboxes ?? [], [
+    { authors: [account.pubkey], kinds: [kinds.EncryptedDirectMessage] },
+    { "#p": [account.pubkey], kinds: [kinds.EncryptedDirectMessage] },
+  ]);
 
-    let filtered = conversations;
-    switch (filter) {
-      case "contacts":
-        filtered = conversations.filter((c) => contacts?.includes(c.correspondent));
-        break;
-      case "muted":
-        filtered = conversations.filter((c) => mutes?.pubkeys?.has(c.correspondent));
-        break;
-      case "other":
-        filtered = conversations.filter(
-          (c) => !contacts?.includes(c.correspondent) && !mutes?.pubkeys.has(c.correspondent),
-        );
-        break;
+  // Start the legacy messages timeline
+  useEffect(() => {
+    loader?.();
+  }, [loader]);
+
+  const legacyGroups = useEventModel(LegacyMessagesGroups, [account.pubkey]);
+  const wrappedGroups = useEventModel(WrappedMessagesGroups, [account.pubkey]);
+
+  const groups = useMemo(() => {
+    const byId = new Map<string, LegacyGroup | WrappedGroup>();
+    const all: (LegacyGroup | WrappedGroup)[] = [...(legacyGroups ?? []), ...(wrappedGroups ?? [])];
+
+    for (const group of all) {
+      const existing = byId.get(group.id);
+      if (existing) {
+        if (existing.lastMessage.created_at < group.lastMessage.created_at) byId.set(group.id, group);
+      } else byId.set(group.id, group);
     }
 
-    return filtered.sort((a, b) => b.messages[0].created_at - a.messages[0].created_at);
-  }, [messages, account.pubkey, contacts?.length, filter, mutes?.pubkeys.size]);
+    return Array.from(byId.values()).sort((a, b) => b.lastMessage.created_at - a.lastMessage.created_at);
+  }, [legacyGroups, wrappedGroups]);
 
-  const callback = useTimelineCurserIntersectionCallback(loader);
   const scroll = useScrollRestoreRef("chats");
+  const callback = useTimelineCurserIntersectionCallback(loader);
 
   return (
-    <SimpleParentView path="/messages" width="md" title="Messages" scroll={false}>
-      <ButtonGroup p="2" size="sm" variant="outline">
-        <Button onClick={() => setFilter("contacts")} variant={filter === "contacts" ? "solid" : "outline"}>
-          Contacts
-        </Button>
-        <Button onClick={() => setFilter("other")} variant={filter === "other" ? "solid" : "outline"}>
-          Other
-        </Button>
-        <Button onClick={() => setFilter("muted")} variant={filter === "muted" ? "solid" : "outline"}>
-          Muted
-        </Button>
-      </ButtonGroup>
-      <IntersectionObserverProvider callback={callback}>
-        <Flex flex={1} overflow="hidden" position="relative">
-          <AutoSizer>
-            {({ width, height }) => (
-              <FixedSizeList
-                height={height}
-                width={width}
-                itemData={conversations ?? []}
-                itemCount={conversations?.length ?? 0}
-                itemKey={(i, data) => data[i].myself + data[i].correspondent}
-                itemSize={64}
-                innerRef={scroll}
-              >
-                {ConversationCard}
-              </FixedSizeList>
-            )}
-          </AutoSizer>
-        </Flex>
-      </IntersectionObserverProvider>
+    <IntersectionObserverProvider callback={callback}>
+      <ReadAuthRequiredAlert relays={inboxes} flexShrink={0} />
+      <Flex flex={1} overflow="hidden" position="relative">
+        <AutoSizer>
+          {({ width, height }) => (
+            <FixedSizeList
+              height={height}
+              width={width}
+              itemData={groups ?? []}
+              itemCount={groups?.length ?? 0}
+              itemKey={(i, data) => data[i].id}
+              itemSize={64}
+              innerRef={scroll}
+              overscanCount={10}
+            >
+              {ConversationCard}
+            </FixedSizeList>
+          )}
+        </AutoSizer>
+      </Flex>
+    </IntersectionObserverProvider>
+  );
+}
+
+function MessagesHomePage() {
+  const account = useActiveAccount()!;
+
+  // Automatically decrypt new wrapped messages
+  const autoDecryptMessages = useObservableEagerState(localSettings.autoDecryptMessages);
+  const locked = useEventModel(GiftWrapsModel, [account.pubkey, true]);
+
+  return (
+    <SimpleParentView
+      path="/messages"
+      width="md"
+      title="Messages"
+      scroll={false}
+      actions={
+        <ButtonGroup variant="ghost" ms="auto">
+          <Button as={RouterLink} to="/messages/inbox" variant="ghost">
+            Inbox{locked && locked.length > 0 && ` (${locked.length})`}
+          </Button>
+          <IconButton
+            as={RouterLink}
+            to="/settings/messages"
+            aria-label="Settings"
+            icon={<SettingsIcon boxSize={5} />}
+          />
+        </ButtonGroup>
+      }
+    >
+      <Groups />
     </SimpleParentView>
   );
 }
@@ -151,7 +196,9 @@ function MessagesHomePage() {
 export default function MessagesHomeView() {
   return (
     <RequireActiveAccount>
-      <MessagesHomePage />
+      <RequireDecryptionCache>
+        <MessagesHomePage />
+      </RequireDecryptionCache>
     </RequireActiveAccount>
   );
 }

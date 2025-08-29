@@ -1,7 +1,13 @@
-import { getEventPointerFromETag, getTagValue, isSafeRelayURL, normalizeURL } from "applesauce-core/helpers";
-
-import { NostrEvent, isPTag } from "../../types/nostr-event";
+import {
+  addRelayHintsToPointer,
+  getEventPointerFromETag,
+  getTagValue,
+  isPTag,
+  isSafeRelayURL,
+  normalizeURL,
+} from "applesauce-core/helpers";
 import dayjs from "dayjs";
+import { NostrEvent } from "nostr-tools";
 
 export type StreamStatus = "live" | "ended" | "planned";
 
@@ -26,7 +32,7 @@ export function getStreamHost(stream: NostrEvent) {
 
 export function getStreamGoalPointer(stream: NostrEvent) {
   const goalTag = stream.tags.find((t) => t[0] === "goal");
-  return goalTag && getEventPointerFromETag(goalTag);
+  return goalTag && addRelayHintsToPointer(getEventPointerFromETag(goalTag), getStreamRelays(stream));
 }
 
 /** Gets all the streaming urls for a stream */

@@ -1,15 +1,16 @@
 import { Spinner, Tag, TagLabel, TagProps } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservableState } from "applesauce-react/hooks";
+import { PublishResponse } from "applesauce-relay";
 
 import { CheckIcon, ErrorIcon } from "../../../components/icons";
 import { PublishLogEntry } from "../../../providers/global/publish-provider";
 
 export function usePublishLogEntryStatus(entry: PublishLogEntry) {
-  const { relays } = useObservable(entry);
+  const relays = useObservableState(entry.relayStatus$) ?? {};
 
   const total = entry.relays.length;
-  const successful = Object.values(relays).filter((p) => p.ok);
-  const failedWithNotice = Object.values(relays).filter((p) => !p.ok && !!p.notice);
+  const successful = Object.values(relays).filter((p) => p?.ok) as PublishResponse[];
+  const failedWithMessage = Object.values(relays).filter((p) => !p?.ok && !!p?.message) as PublishResponse[];
 
   let icon = <Spinner size="xs" />;
   let color: TagProps["colorScheme"] = "blue";
@@ -19,7 +20,7 @@ export function usePublishLogEntryStatus(entry: PublishLogEntry) {
   } else if (successful.length === 0) {
     color = "red";
     icon = <ErrorIcon />;
-  } else if (failedWithNotice.length > 0) {
+  } else if (failedWithMessage.length > 0) {
     color = "orange";
     icon = <CheckIcon />;
   } else {
@@ -27,7 +28,7 @@ export function usePublishLogEntryStatus(entry: PublishLogEntry) {
     icon = <CheckIcon />;
   }
 
-  return { color, icon, successful, failedWithNotice, total };
+  return { color, icon, successful, failedWithNotice: failedWithMessage, total };
 }
 
 export default function PublishActionStatusTag({

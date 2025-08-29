@@ -1,31 +1,31 @@
-import { ReactNode } from "react";
 import { Box, Heading, Link, LinkBox, Spinner, useDisclosure } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
-import { Thread, ThreadQuery } from "applesauce-core/queries";
-import { useStoreQuery } from "applesauce-react/hooks";
-import { EventPointer } from "nostr-tools/nip19";
+import { getNip10References } from "applesauce-core/helpers";
+import { Thread, ThreadModel } from "applesauce-core/models";
+import { useEventModel } from "applesauce-react/hooks";
 import { nip19, NostrEvent } from "nostr-tools";
+import { EventPointer } from "nostr-tools/nip19";
+import { ReactNode } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
-import ThreadPost from "./components/thread-post";
+import LoadingNostrLink from "../../components/loading-nostr-link";
+import TextNoteContents from "../../components/note/timeline-note/text-note-contents";
+import Timestamp from "../../components/timestamp";
+import UserAvatarLink from "../../components/user/user-avatar-link";
+import UserDnsIdentityIcon from "../../components/user/user-dns-identity-icon";
+import UserLink from "../../components/user/user-link";
 import VerticalPageLayout from "../../components/vertical-page-layout";
 import { useReadRelays } from "../../hooks/use-client-relays";
-import IntersectionObserverProvider from "../../providers/local/intersection-observer";
-import { useTimelineCurserIntersectionCallback } from "../../hooks/use-timeline-cursor-intersection-callback";
-import useThreadTimelineLoader from "../../hooks/use-thread-timeline-loader";
-import useSingleEvent from "../../hooks/use-single-event";
-import useParamsEventPointer from "../../hooks/use-params-event-pointer";
-import LoadingNostrLink from "../../components/loading-nostr-link";
-import UserAvatarLink from "../../components/user/user-avatar-link";
-import { getSharableEventAddress } from "../../services/relay-hints";
-import useMaxPageWidth from "../../hooks/use-max-page-width";
-import { getNip10References } from "applesauce-core/helpers";
 import useEventIntersectionRef from "../../hooks/use-event-intersection-ref";
-import UserLink from "../../components/user/user-link";
+import useMaxPageWidth from "../../hooks/use-max-page-width";
+import useParamsEventPointer from "../../hooks/use-params-event-pointer";
+import useSingleEvent from "../../hooks/use-single-event";
+import useThreadTimelineLoader from "../../hooks/use-thread-timeline-loader";
+import { useTimelineCurserIntersectionCallback } from "../../hooks/use-timeline-cursor-intersection-callback";
+import IntersectionObserverProvider from "../../providers/local/intersection-observer";
+import { ContentSettingsProvider } from "../../providers/local/content-settings";
+import { getSharableEventAddress } from "../../services/relay-hints";
 import { ExpandableToggleButton } from "../notifications/components/notification-item";
-import TextNoteContents from "../../components/note/timeline-note/text-note-contents";
-import { TrustProvider } from "../../providers/local/trust-provider";
-import UserDnsIdentityIcon from "../../components/user/user-dns-identity-icon";
-import Timestamp from "../../components/timestamp";
+import ThreadPost from "./components/thread-post";
 
 function ParentNote({ note, level = 0 }: { note: NostrEvent; level?: number }) {
   const ref = useEventIntersectionRef(note);
@@ -41,23 +41,39 @@ function ParentNote({ note, level = 0 }: { note: NostrEvent; level?: number }) {
       rounded="none"
       borderColor="var(--chakra-colors-chakra-border-color)"
       ref={ref}
+      role="article"
     >
-      <ExpandableToggleButton toggle={more} aria-label="Show More" size="sm" float="right" />
+      <ExpandableToggleButton
+        toggle={more}
+        aria-label={more.isOpen ? "Collapse post" : "Expand post"}
+        size="sm"
+        float="right"
+      />
       <Box float="left" mr="2">
-        <UserAvatarLink pubkey={note.pubkey} size="xs" mr="2" />
+        <UserAvatarLink pubkey={note.pubkey} size="xs" mr="2" aria-label="avatar" />
         <UserLink pubkey={note.pubkey} fontWeight="bold" mr="1" />
         <UserDnsIdentityIcon pubkey={note.pubkey} mr="2" />
-        <Link as={RouterLink} to={`/n/${getSharableEventAddress(note)}`}>
+        <Link
+          as={RouterLink}
+          to={`/n/${getSharableEventAddress(note)}`}
+          aria-label={`Posted at ${new Date(note.created_at * 1000).toLocaleString()}`}
+        >
           <Timestamp timestamp={note.created_at} />
         </Link>
       </Box>
       {more.isOpen ? (
-        <TrustProvider trust>
+        <ContentSettingsProvider blurMedia={false}>
           <br />
-          <TextNoteContents event={note} />
-        </TrustProvider>
+          <TextNoteContents event={note} aria-expanded="true" />
+        </ContentSettingsProvider>
       ) : (
-        <Link as={RouterLink} to={`/n/${getSharableEventAddress(note)}`} noOfLines={1} fontStyle="italic">
+        <Link
+          as={RouterLink}
+          to={`/n/${getSharableEventAddress(note)}`}
+          noOfLines={1}
+          fontStyle="italic"
+          aria-expanded="false"
+        >
           {note.content}
         </Link>
       )}
@@ -115,24 +131,11 @@ function ThreadPage({
     }
   }
 
-  const grandparentPointer = focusedPost.parent?.refs.reply?.e;
-
   const parent = getNip10References(focusedPost.event).reply?.e;
 
   return (
     <>
       {parent && <Parents pointer={parent} thread={thread} />}
-      {/* {rootPointer && focusedPost.refs.reply?.e?.id !== rootPointer.id && (
-        <Parents pointer={rootPointer} thread={thread} root={rootPointer} />
-      )}
-      {grandparentPointer && grandparentPointer.id !== rootPointer.id && (
-        <Parents pointer={grandparentPointer} thread={thread} root={rootPointer} />
-      )}
-      {focusedPost.parent ? (
-        <TimelineNote event={focusedPost.parent.event} hideDrawerButton showReplyLine={false} />
-      ) : (
-        focusedPost.refs.reply?.e && <LoadingNostrLink link={{ type: "nevent", data: focusedPost.refs.reply.e }} />
-      )} */}
       <ThreadPost post={focusedPost} initShowReplies focusId={focusId} />
     </>
   );
@@ -142,9 +145,9 @@ export default function ThreadView() {
   const pointer = useParamsEventPointer("id");
   const readRelays = useReadRelays(pointer.relays);
 
-  const focusedEvent = useSingleEvent(pointer.id, pointer.relays);
+  const focusedEvent = useSingleEvent(pointer);
   const { rootPointer, timeline } = useThreadTimelineLoader(focusedEvent, readRelays);
-  const thread = useStoreQuery(ThreadQuery, rootPointer && [rootPointer]);
+  const thread = useEventModel(ThreadModel, rootPointer ? [rootPointer] : undefined);
 
   const callback = useTimelineCurserIntersectionCallback(timeline);
 

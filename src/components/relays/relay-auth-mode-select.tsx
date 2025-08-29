@@ -1,28 +1,33 @@
 import { Select, SelectProps } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservableEagerState } from "applesauce-react/hooks";
 
-import localSettings from "../../services/local-settings";
 import { RelayAuthMode } from "../../services/authentication-signer";
+import localSettings from "../../services/preferences";
+
+export function setRelayAuthMode(relay: string, mode: RelayAuthMode | null) {
+  const modes = localSettings.relayAuthenticationMode.value;
+
+  const existing = modes.find((r) => r.relay === relay);
+  if (!mode) {
+    if (existing) localSettings.relayAuthenticationMode.next(modes.filter((r) => r.relay !== relay));
+  } else {
+    if (existing)
+      localSettings.relayAuthenticationMode.next(modes.map((r) => (r.relay === relay ? { relay, mode } : r)));
+    else localSettings.relayAuthenticationMode.next([...modes, { relay, mode }]);
+  }
+}
 
 export default function RelayAuthModeSelect({
   relay,
   ...props
 }: { relay: string } & Omit<SelectProps, "value" | "onChange" | "children">) {
-  const defaultMode = useObservable(localSettings.defaultAuthenticationMode);
-  const relayMode = useObservable(localSettings.relayAuthenticationMode);
+  const defaultMode = useObservableEagerState(localSettings.defaultAuthenticationMode);
+  const relayMode = useObservableEagerState(localSettings.relayAuthenticationMode);
 
   const authMode = relayMode.find((r) => r.relay === relay)?.mode ?? "";
 
   const setAuthMode = (mode: RelayAuthMode | "") => {
-    const existing = relayMode.find((r) => r.relay === relay);
-
-    if (!mode) {
-      if (existing) localSettings.relayAuthenticationMode.next(relayMode.filter((r) => r.relay !== relay));
-    } else {
-      if (existing)
-        localSettings.relayAuthenticationMode.next(relayMode.map((r) => (r.relay === relay ? { relay, mode } : r)));
-      else localSettings.relayAuthenticationMode.next([...relayMode, { relay, mode }]);
-    }
+    setRelayAuthMode(relay, mode || null);
   };
 
   return (

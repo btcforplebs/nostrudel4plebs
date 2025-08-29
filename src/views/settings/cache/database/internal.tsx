@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { addEvents, countEvents, countEventsByKind, getEventUID, updateUsed } from "nostr-idb";
 import {
   Button,
   ButtonGroup,
@@ -8,7 +6,6 @@ import {
   FormControl,
   FormLabel,
   Heading,
-  Input,
   NumberDecrementStepper,
   NumberIncrementStepper,
   NumberInput,
@@ -16,34 +13,49 @@ import {
   NumberInputStepper,
   Text,
 } from "@chakra-ui/react";
-import { useAsync } from "react-use";
+import { useObservableEagerState } from "applesauce-react/hooks";
+import { addEvents, countEvents, countEventsByKind, getEventUID, updateUsed } from "nostr-idb";
 import { NostrEvent } from "nostr-tools";
-import { useObservable } from "applesauce-react/hooks";
+import { useState } from "react";
+import { useAsync } from "react-use";
 
-import { localDatabase } from "../../../../services/cache-relay";
 import EventKindsPieChart from "../../../../components/charts/event-kinds-pie-chart";
 import EventKindsTable from "../../../../components/charts/event-kinds-table";
-import ImportEventsButton from "./components/import-events-button";
+import { clearCacheData, deleteDatabase } from "../../../../services/database";
+import localSettings from "../../../../services/preferences";
 import ExportEventsButton from "./components/export-events-button";
-import { clearCacheData, deleteDatabase } from "../../../../services/db";
-import localSettings from "../../../../services/local-settings";
+import ImportEventsButton from "./components/import-events-button";
+
+async function getDatabase() {
+  const { database } = await import("../../../../services/event-cache/nostr-idb");
+  return database;
+}
 
 async function importEvents(events: NostrEvent[]) {
-  await addEvents(localDatabase, events);
+  const database = await getDatabase();
+  await addEvents(database, events);
   await updateUsed(
-    localDatabase,
+    database,
     events.map((e) => getEventUID(e)),
   );
 }
 async function exportEvents() {
-  return (await localDatabase.getAll("events")).map((row) => row.event);
+  const database = await getDatabase();
+
+  return (await database.getAll("events")).map((row) => row.event);
 }
 
 export default function InternalDatabasePage() {
-  const { value: count } = useAsync(async () => await countEvents(localDatabase), []);
-  const { value: kinds } = useAsync(async () => await countEventsByKind(localDatabase), []);
+  const { value: count } = useAsync(async () => {
+    const database = await getDatabase();
+    return await countEvents(database);
+  }, []);
+  const { value: kinds } = useAsync(async () => {
+    const database = await getDatabase();
+    return await countEventsByKind(database);
+  }, []);
 
-  const maxEvents = useObservable(localSettings.idbMaxEvents);
+  const maxEvents = useObservableEagerState(localSettings.idbMaxEvents);
 
   const [clearing, setClearing] = useState(false);
   const handleClearData = async () => {

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Spinner } from "@chakra-ui/react";
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, matchRoutes, Outlet, RouterProvider } from "react-router-dom";
+import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
 
 import GlobalStyles from "./styles";
 
@@ -17,7 +18,6 @@ import NostrLinkView from "./views/link";
 import HomeView from "./views/home";
 import ThreadView from "./views/thread";
 import SupportView from "./views/support";
-import ProfileView from "./views/profile";
 import SearchView from "./views/search";
 import LaunchpadView from "./views/launchpad";
 import NotificationsView from "./views/notifications";
@@ -34,6 +34,7 @@ import userRoutes from "./views/user/routes";
 import newRoutes from "./views/new/routes";
 import settingsRoutes from "./views/settings/routes";
 import relaysRoutes from "./views/relays/routes";
+import blossomRoutes from "./views/blossom/routes";
 import videosRoutes from "./views/videos/routes";
 import picturesRoutes from "./views/pictures/routes";
 import streamsRoutes from "./views/streams/routes";
@@ -48,13 +49,15 @@ import articlesRoutes from "./views/articles/routes";
 import torrentsRoutes from "./views/torrents/routes";
 import channelsRoutes from "./views/channels/routes";
 import groupsRoutes from "./views/groups/routes";
+import relayChatRoutes from "./views/relay-chat/routes";
 import goalsRoutes from "./views/goals/routes";
 import badgesRoutes from "./views/badges/routes";
 import emojisRoutes from "./views/emojis/routes";
 import walletRoutes from "./views/wallet/routes";
-import podcastsRoutes from "./views/podcasts/routes";
 
-// const getScrollKey = (location: Location) => location.pathname + location.search + location.hash;
+// Redirect old hash routing
+const hashPath = window.location.hash.match(/^#(\/.+)/);
+if (hashPath) window.history.replaceState({}, "", hashPath[1]);
 
 const RootPage = () => {
   useSetColorMode();
@@ -74,7 +77,7 @@ const NoLayoutPage = () => {
   );
 };
 
-const router = createBrowserRouter(
+export const router = createBrowserRouter(
   [
     { path: "*", Component: NoteFoundView },
     {
@@ -94,7 +97,6 @@ const router = createBrowserRouter(
         { path: "notes", Component: HomeView },
         { path: "new", children: newRoutes },
         { path: "launchpad", Component: LaunchpadView },
-        { path: "profile", Component: ProfileView },
         { path: "messages", children: messagesRoutes },
         { path: "user/:pubkey", children: userRoutes },
         { path: "u/:pubkey", children: userRoutes },
@@ -104,10 +106,12 @@ const router = createBrowserRouter(
         { path: "other-stuff", Component: OtherStuffView },
         { path: "settings", children: settingsRoutes },
         { path: "relays", children: relaysRoutes },
+        { path: "blossom", children: blossomRoutes },
         { path: "notifications", Component: NotificationsView },
         { path: "pictures", children: picturesRoutes },
         { path: "streams", children: streamsRoutes },
         { path: "groups", children: groupsRoutes },
+        { path: "relay-chat", children: relayChatRoutes },
         { path: "tools", children: toolsRoutes },
         { path: "discovery", children: discoveryRoutes },
         { path: "wiki", children: wikiRoutes },
@@ -129,7 +133,6 @@ const router = createBrowserRouter(
         { path: "badges", children: badgesRoutes },
         { path: "emojis", children: emojisRoutes },
         { path: "wallet", children: walletRoutes },
-        { path: "podcasts", children: podcastsRoutes },
       ],
     },
   ],

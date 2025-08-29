@@ -1,31 +1,37 @@
-import { Button, IconButton, useDisclosure } from "@chakra-ui/react";
-import { kinds } from "nostr-tools";
-import { useActiveAccount } from "applesauce-react/hooks";
+import { Button, ButtonProps, IconButton, useDisclosure } from "@chakra-ui/react";
+import { useActiveAccount, useEventModel } from "applesauce-react/hooks";
+import { kinds, NostrEvent } from "nostr-tools";
 
-import { NostrEvent } from "../../../../types/nostr-event";
+import { TimelineModel } from "applesauce-core/models";
+import { useMemo } from "react";
 import { RepostIcon } from "../../../icons";
-import useEventCount from "../../../../hooks/use-event-count";
 import ShareModal from "./share-modal";
 
-export default function EventShareButton({ event, title = "Share Event" }: { event: NostrEvent; title?: string }) {
+export default function EventShareButton({
+  event,
+  title = "Share Event",
+  ...props
+}: Omit<ButtonProps, "children"> & { event: NostrEvent; title?: string }) {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   const account = useActiveAccount();
-  const hasShared = useEventCount(
-    account ? { "#e": [event.id], kinds: [kinds.Repost, kinds.GenericRepost], authors: [account.pubkey] } : undefined,
+  const shares = useEventModel(
+    TimelineModel,
+    account ? [{ "#e": [event.id], kinds: [kinds.Repost, kinds.GenericRepost], authors: [account.pubkey] }] : undefined,
   );
-  const shareCount = useEventCount({ "#e": [event.id], kinds: [kinds.Repost, kinds.GenericRepost] });
+  const shared = useMemo(() => shares?.some((e) => e.pubkey === account?.pubkey), [shares, account?.pubkey]);
 
   return (
     <>
-      {shareCount !== undefined && shareCount > 0 ? (
+      {shares !== undefined && shares.length > 0 ? (
         <Button
           leftIcon={<RepostIcon />}
           onClick={onOpen}
           title={title}
-          colorScheme={hasShared ? "primary" : undefined}
+          colorScheme={shared ? "primary" : undefined}
+          {...props}
         >
-          {shareCount}
+          {shares.length}
         </Button>
       ) : (
         <IconButton
@@ -33,7 +39,8 @@ export default function EventShareButton({ event, title = "Share Event" }: { eve
           onClick={onOpen}
           aria-label={title}
           title={title}
-          colorScheme={hasShared ? "primary" : undefined}
+          colorScheme={shared ? "primary" : undefined}
+          {...props}
         />
       )}
       {isOpen && <ShareModal isOpen={isOpen} onClose={onClose} event={event} />}

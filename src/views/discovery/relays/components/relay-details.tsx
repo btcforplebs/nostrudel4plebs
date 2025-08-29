@@ -14,26 +14,23 @@ import {
   IconButton,
   Text,
 } from "@chakra-ui/react";
-import { useContext } from "react";
+import { getTagValue } from "applesauce-core/helpers";
 import { NostrEvent } from "nostr-tools";
+import { useContext } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
-import { SelectedContext } from "../selected-context";
-import { getTagValue } from "../../../../helpers/nostr/event";
 import DebugEventButton from "../../../../components/debug-modal/debug-event-button";
-import SupportedNIPs from "../../../relays/components/supported-nips";
-import RelayNotes from "../../../relays/relay-details/relay-notes";
 import { ExternalLinkIcon } from "../../../../components/icons";
-import PeopleListProvider from "../../../../providers/local/people-list-provider";
-import { getPubkeysFromList } from "../../../../helpers/nostr/lists";
+import RelayFavicon from "../../../../components/relay/relay-favicon";
 import UserAvatarLink from "../../../../components/user/user-avatar-link";
 import UserName from "../../../../components/user/user-name";
-import RelayFavicon from "../../../../components/relay-favicon";
+import { getPubkeysFromList } from "../../../../helpers/nostr/lists";
+import SupportedNIPs from "../../../relays/components/supported-nips";
+import { SelectedContext } from "../selected-context";
 
 export default function RelayStatusDetails({ event, ...props }: Omit<FlexProps, "children"> & { event: NostrEvent }) {
   const selected = useContext(SelectedContext);
   const identity = getTagValue(event, "d");
-  const network = getTagValue(event, "n");
   const software = getTagValue(event, "s");
   const version = event.tags.find((t) => t[0] === "l" && t[2] === "nip11.version")?.[1];
 
@@ -134,11 +131,6 @@ export default function RelayStatusDetails({ event, ...props }: Omit<FlexProps, 
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <PeopleListProvider initList="global">
-        <Flex overflow="auto" h="full" w="full" direction="column" gap="2">
-          {url && <RelayNotes relay={url} />}
-        </Flex>
-      </PeopleListProvider>
     </Flex>
   );
 }

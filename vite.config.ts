@@ -14,6 +14,22 @@ export default defineConfig({
   build: {
     target: ["chrome89", "edge89", "firefox89", "safari15"],
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Bundle all Capacitor dependencies together
+          // This is to fix the issue where @capacitor/preferences causes module initialization to hang because circular promises
+          capacitor: [
+            "@capacitor/core",
+            "@capacitor/app",
+            "@capacitor/preferences",
+            "@capacitor/share",
+            "@capacitor-community/sqlite",
+            "@capacitor-mlkit/barcode-scanning",
+          ],
+        },
+      },
+    },
   },
   server: {
     allowedHosts: [
@@ -24,19 +40,25 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     VitePWA({
-      // strategies: "injectManifest",
-      // srcDir: "src",
-      // filename: "worker.ts",
-      registerType: "prompt",
-      // injectRegister: null,
+      strategies: "injectManifest",
+      srcDir: "src/sw/worker",
+      filename: "sw.ts",
+      registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+        type: "module",
+        navigateFallback: "index.html",
+      },
       injectManifest: {
         minify: false,
         sourcemap: true,
-        // This increase the cache limit to 4mB
+        // This increase the cache limit to 8mB
         maximumFileSizeToCacheInBytes: 1024 * 1024 * 8,
+        // Ensure index.html is included in the manifest
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,json,woff,woff2}"],
       },
       workbox: {
-        // This increase the cache limit to 4mB
+        // This increase the cache limit to 8mB
         maximumFileSizeToCacheInBytes: 1024 * 1024 * 8,
       },
       manifest: {
@@ -57,28 +79,6 @@ export default defineConfig({
         lang: "en",
         start_url: "/",
         scope: "/",
-        shortcuts: [
-          {
-            name: "Notes",
-            url: "/",
-            description: "",
-          },
-          {
-            name: "Notifications",
-            url: "/notifications",
-            description: "",
-          },
-          {
-            name: "Messages",
-            url: "/messages",
-            description: "",
-          },
-          {
-            name: "Streams",
-            url: "/streams",
-            description: "",
-          },
-        ],
         protocol_handlers: [
           {
             protocol: "web+nostr",

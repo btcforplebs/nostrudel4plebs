@@ -14,7 +14,7 @@ import { useActiveAccount } from "applesauce-react/hooks";
 import { getEventCoordinate } from "../../../helpers/nostr/event";
 import { useReadRelays } from "../../../hooks/use-client-relays";
 import { ChevronLeftIcon } from "../../../components/icons";
-import { AdditionalRelayProvider } from "../../../providers/local/additional-relay-context";
+import { AdditionalRelayProvider } from "../../../providers/local/additional-relay";
 import UsersCard from "./users-card";
 import ZapsCard from "./zaps-card";
 import ChatCard from "./chat-card";
@@ -72,7 +72,7 @@ function StreamModerationPage() {
   const account = useActiveAccount()!;
   const readRelays = useReadRelays();
 
-  const { loader, timeline: streams } = useTimelineLoader(account.pubkey + "-streams", readRelays, [
+  const { timeline: streams } = useTimelineLoader(account.pubkey + "-streams", readRelays, [
     {
       authors: [account.pubkey],
       kinds: [kinds.LiveEvent],

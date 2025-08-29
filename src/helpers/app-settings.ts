@@ -56,10 +56,23 @@ type AppSettingsV12 = Omit<AppSettingsV11, "showSignatureVerification" | "versio
   mirrorBlobsOnShare: boolean;
 };
 
-export type AppSettings = AppSettingsV12;
+type AppSettingsV13 = Omit<AppSettingsV12, "version" | "mutedWords" | "autoShowMedia" | "blurImages"> & {
+  version: 13;
+};
 
-export const defaultSettings: AppSettings = {
-  version: 12,
+type AppSettingsV14 = Omit<AppSettingsV13, "version" | "autoDecryptDMs" | "proxyUserMedia"> & {
+  version: 14;
+};
+
+type AppSettingsV15 = Omit<AppSettingsV14, "version" | "hideUsernames"> & {
+  version: 15;
+  shareService?: string;
+};
+
+export type AppSettings = AppSettingsV15;
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  version: 15,
 
   // display
   theme: "default",
@@ -67,21 +80,16 @@ export const defaultSettings: AppSettings = {
   primaryColor: "#8DB600",
   maxPageWidth: "none",
   showPubkeyColor: "avatar",
-  blurImages: true,
-  hideUsernames: false,
   removeEmojisInUsernames: false,
-  autoShowMedia: true,
   showContentWarning: true,
   loadOpenGraphData: true,
 
   // posting
   noteDifficulty: null,
-  proxyUserMedia: false,
   mirrorBlobsOnShare: false,
 
   // performance
   showReactions: true,
-  autoDecryptDMs: false,
 
   mediaUploadService: "nostr.build",
 
@@ -92,6 +100,7 @@ export const defaultSettings: AppSettings = {
   // privacy
   imageProxy: "",
   corsProxy: "",
+  shareService: "https://njump.me/",
   twitterRedirect: undefined,
   redditRedirect: undefined,
   youtubeRedirect: undefined,

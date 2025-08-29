@@ -1,54 +1,106 @@
 import { lazy } from "react";
-import { RouteObject } from "react-router-dom";
-import UserView from ".";
-import UserAboutTab from "./about";
-import UserNotesTab from "./notes";
-import UserArticlesTab from "./articles";
-import UserPicturePostsTab from "./media-posts";
+import { Outlet, RouteObject } from "react-router-dom";
+
+import {
+  AddReactionIcon,
+  ArticleIcon,
+  DownloadIcon,
+  EmojiPacksIcon,
+  ErrorIcon,
+  FollowIcon,
+  GoalIcon,
+  LightningIcon,
+  ListsIcon,
+  LiveStreamIcon,
+  MediaIcon,
+  MuteIcon,
+  NotesIcon,
+  ProfileIcon,
+  RelayIcon,
+  SettingsIcon,
+  TorrentIcon,
+  VideoIcon,
+} from "../../components/icons";
+import AppTabsLayout, { AppTabs, AppTabsProvider } from "../../components/layout/presets/app-tabs-layout";
+import useParamsProfilePointer from "../../hooks/use-params-pubkey-pointer";
+import UserAboutView from "./about";
+import UserArticlesTab from "./tabs/articles";
+import UserPicturePostsTab from "./tabs/media";
+import UserNotesTab from "./tabs/notes";
+import UserPlus01 from "../../components/icons/user-plus-01";
+import SimpleHeader from "../../components/layout/components/simple-header";
+import { Flex } from "@chakra-ui/react";
+import UserLink from "../../components/user/user-link";
+import UserAvatar from "../../components/user/user-avatar";
 
 // other stuff
-const UserStreamsTab = lazy(() => import("./streams"));
-const UserTracksTab = lazy(() => import("./tracks"));
-const UserFilesTab = lazy(() => import("./files"));
-const UserVideosTab = lazy(() => import("./videos"));
-const UserZapsTab = lazy(() => import("./zaps"));
-const UserReactionsTab = lazy(() => import("./reactions"));
-const UserListsTab = lazy(() => import("./lists"));
-const UserFollowersTab = lazy(() => import("./followers"));
-const UserFollowingTab = lazy(() => import("./following"));
-const UserGoalsTab = lazy(() => import("./goals"));
-const UserEmojiPacksTab = lazy(() => import("./emoji-packs"));
-const UserRelaysTab = lazy(() => import("./relays"));
-const UserReportsTab = lazy(() => import("./reports"));
-const UserMutedByTab = lazy(() => import("./muted-by"));
-const UserMessagesTab = lazy(() => import("./messages"));
-const UserTorrentsTab = lazy(() => import("./torrents"));
+const UserStreamsTab = lazy(() => import("./tabs/streams"));
+const UserFilesTab = lazy(() => import("./tabs/files"));
+const UserVideosTab = lazy(() => import("./tabs/videos"));
+const UserZapsTab = lazy(() => import("./tabs/zaps"));
+const UserReactionsTab = lazy(() => import("./tabs/reactions"));
+const UserListsTab = lazy(() => import("./tabs/lists"));
+const UserFollowersTab = lazy(() => import("./tabs/followers"));
+const UserFollowingTab = lazy(() => import("./tabs/following"));
+const UserGoalsTab = lazy(() => import("./tabs/goals"));
+const UserEmojiPacksTab = lazy(() => import("./tabs/emoji-packs"));
+const UserReportsTab = lazy(() => import("./tabs/reports"));
+const UserMutedByTab = lazy(() => import("./tabs/muted-by"));
+const UserMessagesTab = lazy(() => import("./tabs/messages"));
+const UserTorrentsTab = lazy(() => import("./tabs/torrents"));
+const UserAdvancedTab = lazy(() => import("./tabs/advanced"));
+
+export const userProfileTabs: AppTabs[] = [
+  { label: "About", path: "", icon: ProfileIcon },
+  { label: "Notes", path: "notes", icon: NotesIcon, Component: UserNotesTab },
+  { label: "Articles", path: "articles", icon: ArticleIcon, Component: UserArticlesTab },
+  { label: "Streams", path: "streams", icon: LiveStreamIcon, Component: UserStreamsTab },
+  { label: "Media", path: "media", icon: MediaIcon, Component: UserPicturePostsTab },
+  { label: "Zaps", path: "zaps", icon: LightningIcon, Component: UserZapsTab },
+  { label: "Lists", path: "lists", icon: ListsIcon, Component: UserListsTab },
+  { label: "Following", path: "following", icon: FollowIcon, Component: UserFollowingTab },
+  { label: "Reactions", path: "reactions", icon: AddReactionIcon, Component: UserReactionsTab },
+  { label: "Goals", path: "goals", icon: GoalIcon, Component: UserGoalsTab },
+  { label: "Videos", path: "videos", icon: VideoIcon, Component: UserVideosTab },
+  { label: "Files", path: "files", icon: DownloadIcon, Component: UserFilesTab },
+  { label: "Emojis", path: "emojis", icon: EmojiPacksIcon, Component: UserEmojiPacksTab },
+  { label: "Torrents", path: "torrents", icon: TorrentIcon, Component: UserTorrentsTab },
+  { label: "Reports", path: "reports", icon: ErrorIcon, Component: UserReportsTab },
+  { label: "Followers", path: "followers", icon: UserPlus01, Component: UserFollowersTab },
+  { label: "Muted by", path: "muted-by", icon: MuteIcon, Component: UserMutedByTab },
+  { label: "Advanced", path: "advanced", icon: SettingsIcon, Component: UserAdvancedTab },
+];
+
+function UserViewHeader() {
+  const user = useParamsProfilePointer("pubkey");
+
+  return (
+    <SimpleHeader
+      title={
+        <Flex alignItems="center" gap="2">
+          <UserLink pubkey={user.pubkey} />
+        </Flex>
+      }
+      icon={<UserAvatar pubkey={user.pubkey} size="sm" />}
+    />
+  );
+}
 
 export default [
   {
-    Component: UserView,
-    children: [
-      { index: true, Component: UserAboutTab },
-      { path: "about", Component: UserAboutTab },
-      { path: "notes", Component: UserNotesTab },
-      { path: "articles", Component: UserArticlesTab },
-      { path: "media", Component: UserPicturePostsTab },
-      { path: "streams", Component: UserStreamsTab },
-      { path: "tracks", Component: UserTracksTab },
-      { path: "videos", Component: UserVideosTab },
-      { path: "files", Component: UserFilesTab },
-      { path: "zaps", Component: UserZapsTab },
-      { path: "reactions", Component: UserReactionsTab },
-      { path: "lists", Component: UserListsTab },
-      { path: "followers", Component: UserFollowersTab },
-      { path: "following", Component: UserFollowingTab },
-      { path: "goals", Component: UserGoalsTab },
-      { path: "emojis", Component: UserEmojiPacksTab },
-      { path: "relays", Component: UserRelaysTab },
-      { path: "reports", Component: UserReportsTab },
-      { path: "muted-by", Component: UserMutedByTab },
-      { path: "dms", Component: UserMessagesTab },
-      { path: "torrents", Component: UserTorrentsTab },
-    ],
+    index: true,
+    element: (
+      <AppTabsProvider tabs={userProfileTabs}>
+        <UserAboutView />
+      </AppTabsProvider>
+    ),
+  },
+  {
+    element: (
+      <AppTabsLayout tabs={userProfileTabs} header={<UserViewHeader />}>
+        <Outlet />
+      </AppTabsLayout>
+    ),
+    children: userProfileTabs,
   },
 ] satisfies RouteObject[];

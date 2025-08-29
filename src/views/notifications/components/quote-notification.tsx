@@ -1,8 +1,8 @@
 import { ReactNode, forwardRef } from "react";
 import { kinds, NostrEvent } from "nostr-tools";
 
-import { EmbedEvent } from "../../../components/embed-event";
-import { QuoteEventIcon } from "../../../components/icons";
+import { EmbedEventCard } from "../../../components/embed-event/card";
+import { QuoteIcon } from "../../../components/icons";
 import NotificationIconEntry from "./notification-icon-entry";
 import { TimelineNote } from "../../../components/note/timeline-note";
 import ArticleCard from "../../articles/components/article-card";
@@ -18,14 +18,14 @@ const QuoteNotification = forwardRef<HTMLDivElement, { event: NostrEvent; onClic
         content = <TimelineNote event={event} showReplyButton />;
         break;
       default:
-        content = <EmbedEvent event={event} />;
+        content = <EmbedEventCard event={event} />;
         break;
     }
 
     return (
       <NotificationIconEntry
         ref={ref}
-        icon={<QuoteEventIcon boxSize={6} color="purple.400" />}
+        icon={<QuoteIcon boxSize={6} color="teal.400" />}
         id={event.id}
         pubkey={event.pubkey}
         timestamp={event.created_at}

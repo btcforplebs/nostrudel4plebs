@@ -1,20 +1,18 @@
-import { Flex, Link, SimpleGrid, Spacer } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { Flex, SimpleGrid, Spacer } from "@chakra-ui/react";
+import { useObservableState } from "applesauce-react/hooks";
 
-import { connections$ } from "../../../../services/rx-nostr";
-import RelayFavicon from "../../../../components/relay-favicon";
-import RouterLink from "../../../../components/router-link";
+import RelayFavicon from "../../../../components/relay/relay-favicon";
+import RelayLink from "../../../../components/relay/relay-link";
 import { RelayAuthIconButton } from "../../../../components/relays/relay-auth-icon-button";
 import RelayStatusBadge from "../../../../components/relays/relay-status";
 import { getConnectionStateSort } from "../../../../helpers/relay";
+import { connections$ } from "../../../../services/pool";
 
 function RelayCard({ relay }: { relay: string }) {
   return (
     <Flex gap="2" p="2" alignItems="center" borderWidth={1} rounded="md">
       <RelayFavicon relay={relay} size="sm" showStatus />
-      <Link as={RouterLink} to={`/relays/${encodeURIComponent(relay)}`} isTruncated fontWeight="bold" py="1" pr="5">
-        {relay}
-      </Link>
+      <RelayLink relay={relay} isTruncated fontWeight="bold" py="1" pr="5" />
       <Spacer />
       <RelayAuthIconButton relay={relay} size="sm" variant="ghost" />
       <RelayStatusBadge relay={relay} />
@@ -23,7 +21,7 @@ function RelayCard({ relay }: { relay: string }) {
 }
 
 export default function RelayConnectionsTab() {
-  const connections = useObservable(connections$);
+  const connections = useObservableState(connections$) ?? {};
 
   return (
     <Flex direction="column">

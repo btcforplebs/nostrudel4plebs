@@ -1,26 +1,29 @@
-import { Link as RouterLink } from "react-router-dom";
 import {
+  Button,
   Flex,
   FormControl,
-  FormLabel,
-  Switch,
+  FormErrorMessage,
   FormHelperText,
+  FormLabel,
   Input,
-  Select,
-  Textarea,
   Link,
-  Button,
+  Select,
+  Switch,
+  Textarea,
 } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservableEagerState } from "applesauce-react/hooks";
+import { Link as RouterLink } from "react-router-dom";
 
-import localSettings from "../../../services/local-settings";
-import useSettingsForm from "../use-settings-form";
 import SimpleView from "../../../components/layout/presets/simple-view";
+import localSettings from "../../../services/preferences";
+import useSettingsForm from "../use-settings-form";
+import { safeUrl } from "../../../helpers/parse";
 
 export default function DisplaySettings() {
   const { register, submit, formState } = useSettingsForm();
 
-  const hideZapBubbles = useObservable(localSettings.hideZapBubbles);
+  const hideZapBubbles = useObservableEagerState(localSettings.hideZapBubbles);
+  const hideUsernames = useObservableEagerState(localSettings.hideUsernames);
 
   return (
     <SimpleView
@@ -100,25 +103,18 @@ export default function DisplaySettings() {
       </FormControl>
       <FormControl>
         <Flex alignItems="center">
-          <FormLabel htmlFor="blurImages" mb="0">
-            Blur media from strangers
-          </FormLabel>
-          <Switch id="blurImages" {...register("blurImages")} />
-        </Flex>
-        <FormHelperText>
-          <span>Enabled: blur media from people you aren't following</span>
-        </FormHelperText>
-      </FormControl>
-      <FormControl>
-        <Flex alignItems="center">
           <FormLabel htmlFor="hideUsernames" mb="0">
             Hide usernames (anon mode)
           </FormLabel>
-          <Switch id="hideUsernames" {...register("hideUsernames")} />
+          <Switch
+            id="hideUsernames"
+            isChecked={hideUsernames}
+            onChange={() => localSettings.hideUsernames.next(!hideUsernames)}
+          />
         </Flex>
         <FormHelperText>
           <span>
-            Enabled: hides usernames and pictures.{" "}
+            Hides usernames and pictures on notes.{" "}
             <Link
               as={RouterLink}
               color="blue.500"
@@ -137,7 +133,7 @@ export default function DisplaySettings() {
           <Switch id="removeEmojisInUsernames" {...register("removeEmojisInUsernames")} />
         </Flex>
         <FormHelperText>
-          <span>Enabled: Removes all emojis in other users usernames and display names</span>
+          <span>Removes all emojis in other users usernames and display names</span>
         </FormHelperText>
       </FormControl>
       <FormControl>
@@ -148,11 +144,11 @@ export default function DisplaySettings() {
           <Switch
             id="hideZapBubbles"
             isChecked={hideZapBubbles}
-            onChange={() => localSettings.hideZapBubbles.next(!localSettings.hideZapBubbles.value)}
+            onChange={() => localSettings.hideZapBubbles.next(!hideZapBubbles)}
           />
         </Flex>
         <FormHelperText>
-          <span>Enabled: Hides individual zaps on notes in the timeline</span>
+          <span>Hides individual zaps on notes in the timeline</span>
         </FormHelperText>
       </FormControl>
       <FormControl>
@@ -163,26 +159,17 @@ export default function DisplaySettings() {
           <Switch id="show-content-warning" {...register("showContentWarning")} />
         </Flex>
         <FormHelperText>
-          <span>Enabled: shows a warning for notes with NIP-36 Content Warning</span>
+          <span>Shows a warning for notes with NIP-36 Content Warning</span>
         </FormHelperText>
       </FormControl>
       <FormControl>
-        <FormLabel htmlFor="muted-words" mb="0">
-          Muted words
-        </FormLabel>
-        <Textarea
-          id="muted-words"
-          {...register("mutedWords")}
-          placeholder="Broccoli, Spinach, Artichoke..."
-          maxW="2xl"
-        />
-        <FormHelperText>
-          <span>
-            Comma separated list of words, phrases or hashtags you never want to see in notes. (case insensitive)
-          </span>
-          <br />
-          <span>Be careful its easy to hide all notes if you add common words.</span>
-        </FormHelperText>
+        <Flex alignItems="center">
+          <FormLabel htmlFor="showReactions" mb="0">
+            Show reactions
+          </FormLabel>
+          <Switch id="showReactions" {...register("showReactions")} />
+        </Flex>
+        <FormHelperText>Show reactions on notes</FormHelperText>
       </FormControl>
     </SimpleView>
   );

@@ -8,19 +8,18 @@ import {
   Code,
   Switch,
   Button,
-  Heading,
   FormLabel,
   Text,
 } from "@chakra-ui/react";
-import { useObservable } from "applesauce-react/hooks";
+import { useObservable, useObservableEagerState } from "applesauce-react/hooks";
 
 import { safeUrl } from "../../../helpers/parse";
 import { createRequestProxyUrl } from "../../../helpers/request";
-import VerticalPageLayout from "../../../components/vertical-page-layout";
 import useSettingsForm from "../use-settings-form";
-import localSettings from "../../../services/local-settings";
+import localSettings from "../../../services/preferences";
 import DefaultAuthModeSelect from "../../../components/settings/default-auth-mode-select";
 import SimpleView from "../../../components/layout/presets/simple-view";
+import { DEFAULT_SHARE_SERVICE } from "../../../const";
 
 async function validateInvidiousUrl(url?: string) {
   if (!url) return true;
@@ -38,6 +37,7 @@ async function validateRequestProxy(url?: string) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(createRequestProxyUrl("https://example.com", url), { signal: controller.signal });
+    clearTimeout(timeoutId);
     return res.ok || "Cant reach instance";
   } catch (e) {
     return "Cant reach instance";
@@ -47,8 +47,7 @@ async function validateRequestProxy(url?: string) {
 export default function PrivacySettings() {
   const { register, submit, formState } = useSettingsForm();
 
-  const proactivelyAuthenticate = useObservable(localSettings.proactivelyAuthenticate);
-  const debugApi = useObservable(localSettings.debugApi);
+  const debugApi = useObservableEagerState(localSettings.enableDebugApi);
 
   return (
     <SimpleView
@@ -71,27 +70,28 @@ export default function PrivacySettings() {
       }
     >
       <FormControl>
-        <FormLabel>Default authorization behavior</FormLabel>
-        <DefaultAuthModeSelect w="xs" rounded="md" flexShrink={0} />
-        <FormHelperText>How should the app handle relays requesting identification</FormHelperText>
-      </FormControl>
-
-      <FormControl>
-        <Flex alignItems="center">
-          <FormLabel htmlFor="proactivelyAuthenticate" mb="0">
-            Proactively authenticate to relays
-          </FormLabel>
-          <Switch
-            id="proactivelyAuthenticate"
-            isChecked={proactivelyAuthenticate}
-            onChange={(e) => localSettings.proactivelyAuthenticate.next(e.currentTarget.checked)}
-          />
-        </Flex>
+        <FormLabel htmlFor="imageProxy" mb="0">
+          Image proxy service
+        </FormLabel>
+        <Input
+          id="imageProxy"
+          maxW="sm"
+          type="url"
+          {...register("imageProxy", {
+            setValueAs: (v) => safeUrl(v) || v,
+          })}
+        />
+        {formState.errors.imageProxy && <FormErrorMessage>{formState.errors.imageProxy.message}</FormErrorMessage>}
         <FormHelperText>
-          <span>Authenticate to relays as soon as they send the authentication challenge</span>
+          <span>
+            A URL to an instance of{" "}
+            <Link href="https://github.com/willnorris/imageproxy" isExternal target="_blank">
+              willnorris/imageproxy
+            </Link>{" "}
+            that will be used to resize images.
+          </span>
         </FormHelperText>
       </FormControl>
-
       <FormControl isInvalid={!!formState.errors.twitterRedirect}>
         <FormLabel>Nitter instance</FormLabel>
         <Input
@@ -196,6 +196,30 @@ export default function PrivacySettings() {
         </FormHelperText>
       </FormControl>
       <FormControl>
+        <FormLabel>Share service</FormLabel>
+        <Input
+          type="url"
+          maxW="sm"
+          placeholder={DEFAULT_SHARE_SERVICE}
+          {...register("shareService")}
+          list="share-services"
+        />
+        <datalist id="share-services">
+          <option value="https://njump.me/" />
+          <option value="https://nostr.com/" />
+          <option value="https://nostr.at/" />
+          <option value="https://nostr.eu/" />
+        </datalist>
+        {formState.errors.shareService && <FormErrorMessage>{formState.errors.shareService.message}</FormErrorMessage>}
+        <FormHelperText>
+          A URL to an instance of{" "}
+          <Link href="https://github.com/fiatjaf/njump" isExternal color="blue.500">
+            njump
+          </Link>{" "}
+          that will be used to share nostr links.
+        </FormHelperText>
+      </FormControl>
+      <FormControl>
         <Flex alignItems="center">
           <FormLabel htmlFor="loadOpenGraphData" mb="0">
             Load Open Graph data
@@ -220,7 +244,7 @@ export default function PrivacySettings() {
           <Switch
             id="debugApi"
             isChecked={debugApi}
-            onChange={(e) => localSettings.debugApi.next(e.currentTarget.checked)}
+            onChange={(e) => localSettings.enableDebugApi.next(e.currentTarget.checked)}
           />
         </Flex>
         <FormHelperText>

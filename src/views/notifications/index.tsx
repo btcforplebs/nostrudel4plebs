@@ -3,7 +3,7 @@ import { Button, Divider, Flex, Text } from "@chakra-ui/react";
 import dayjs, { Dayjs } from "dayjs";
 import { getEventUID } from "nostr-idb";
 import { BehaviorSubject } from "rxjs";
-import { useActiveAccount, useObservable } from "applesauce-react/hooks";
+import { useActiveAccount, useObservable, useObservableEagerState } from "applesauce-react/hooks";
 import { COMMENT_KIND } from "applesauce-core/helpers";
 import { kinds } from "nostr-tools";
 
@@ -55,6 +55,7 @@ const NotificationsTimeline = memo(
   ({
     showReplies,
     showMentions,
+    showQuotes,
     showZaps,
     showReposts,
     showReactions,
@@ -62,6 +63,7 @@ const NotificationsTimeline = memo(
   }: {
     showReplies: boolean;
     showMentions: boolean;
+    showQuotes: boolean;
     showZaps: boolean;
     showReposts: boolean;
     showReactions: boolean;
@@ -70,7 +72,7 @@ const NotificationsTimeline = memo(
     const { people } = usePeopleListContext();
     const peoplePubkeys = useMemo(() => people?.map((p) => p.pubkey), [people]);
 
-    const timeline = useObservable(notifications$) ?? [];
+    const timeline = useObservableEagerState(notifications$) ?? [];
 
     const cacheKey = useTimelineLocationCacheKey();
     const numberCache = useNumberCache(cacheKey);
@@ -98,6 +100,9 @@ const NotificationsTimeline = memo(
           break;
 
         case NotificationType.Quote:
+          if (!showQuotes) continue;
+          break;
+
         case NotificationType.Mention:
           if (!showMentions) continue;
           break;
@@ -185,12 +190,13 @@ function NotificationsPage() {
 
   // const { value: focused, setValue: setFocused } = useRouteStateValue("focused", "");
   // const [focused, setFocused] = useState("");
-  const focused = useObservable(cachedFocus);
+  const focused = useObservableEagerState(cachedFocus);
   const setFocused = useCallback((id: string) => cachedFocus.next(id), [cachedFocus]);
   const focusContext = useMemo(() => ({ id: focused, focus: setFocused }), [focused, setFocused]);
 
   const showReplies = useLocalStorageDisclosure("notifications-show-replies", true);
   const showMentions = useLocalStorageDisclosure("notifications-show-mentions", true);
+  const showQuotes = useLocalStorageDisclosure("notifications-show-quotes", true);
   const showZaps = useLocalStorageDisclosure("notifications-show-zaps", true);
   const showReposts = useLocalStorageDisclosure("notifications-show-reposts", true);
   const showReactions = useLocalStorageDisclosure("notifications-show-reactions", false);
@@ -205,6 +211,7 @@ function NotificationsPage() {
           <NotificationTypeToggles
             showReplies={showReplies}
             showMentions={showMentions}
+            showQuotes={showQuotes}
             showZaps={showZaps}
             showReactions={showReactions}
             showReposts={showReposts}
@@ -220,6 +227,7 @@ function NotificationsPage() {
             <NotificationsTimeline
               showReplies={showReplies.isOpen}
               showMentions={showMentions.isOpen}
+              showQuotes={showQuotes.isOpen}
               showZaps={showZaps.isOpen}
               showReposts={showReposts.isOpen}
               showReactions={showReactions.isOpen}

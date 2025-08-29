@@ -1,4 +1,3 @@
-import { memo, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -6,22 +5,24 @@ import {
   AlertTitle,
   Box,
   Card,
+  Flex,
   Heading,
   Select,
   SimpleGrid,
   Text,
 } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
+import { useActiveAccount, useObservableEagerState } from "applesauce-react/hooks";
 import { nip19 } from "nostr-tools";
+import { memo, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
-import { useActiveAccount } from "applesauce-react/hooks";
-import useUserContactList from "../../../hooks/use-user-contact-list";
-import { useWebOfTrust } from "../../../providers/global/web-of-trust-provider";
+import HoverLinkOverlay from "../../../components/hover-link-overlay";
 import UserAvatar from "../../../components/user/user-avatar";
 import UserName from "../../../components/user/user-name";
-import HoverLinkOverlay from "../../../components/hover-link-overlay";
 import VerticalPageLayout from "../../../components/vertical-page-layout";
-import useForceUpdate from "../../../hooks/use-force-update";
+import useUserContactList from "../../../hooks/use-user-contact-list";
+import { socialGraph$ } from "../../../services/social-graph";
+import SimpleView from "../../../components/layout/presets/simple-view";
 
 const UserCard = memo(({ pubkey, blindspot }: { pubkey: string; blindspot: string[] }) => {
   return (
@@ -41,26 +42,18 @@ export default function BlindspotHomeView() {
   const account = useActiveAccount()!;
   const [sort, setSort] = useState("quality"); // follows, quality
 
+  const graph = useObservableEagerState(socialGraph$);
   const contacts = useUserContactList(account.pubkey);
-  const graph = useWebOfTrust();
 
-  const update = useForceUpdate();
-  useEffect(() => {
-    graph?.on("computed", update);
-    return () => {
-      graph?.off("computed", update);
-    };
-  }, [graph]);
-
-  const pubkeys = useMemo(() => graph?.connections.get(account.pubkey), [contacts]);
+  const pubkeys = useMemo(() => graph.getFollowedByUser(account.pubkey), [graph, account.pubkey]);
 
   const blindspots = useMemo(() => {
     if (!contacts || !pubkeys) return [];
 
     const arr = Array.from(pubkeys)
       .map((pubkey) => {
-        const following = graph?.connections.get(pubkey);
-        const blindspot = following?.filter((p) => !pubkeys.includes(p) && p !== account.pubkey) ?? [];
+        const following = graph.getFollowedByUser(pubkey);
+        const blindspot = Array.from(following).filter((p) => !pubkeys.has(p) && p !== account.pubkey) ?? [];
 
         return { pubkey, blindspot };
       })
@@ -72,7 +65,7 @@ export default function BlindspotHomeView() {
       // the average distance to pubkeys in the blindspot
       const quality = new Map<string, number>();
       for (const { pubkey, blindspot } of arr) {
-        const total = blindspot.reduce((t, p) => t + (graph?.distance.get(p) ?? 0), 0);
+        const total = blindspot.reduce((t, p) => t + (graph.getFollowDistance(p) ?? 0), 0);
         quality.set(pubkey, total / blindspot.length);
       }
 
@@ -81,15 +74,14 @@ export default function BlindspotHomeView() {
   }, [account.pubkey, pubkeys, graph, sort]);
 
   return (
-    <VerticalPageLayout>
-      <Box>
-        <Heading>Blind spots</Heading>
-        <Text fontStyle="italic">Pick another user and see what they are seeing that your not.</Text>
-      </Box>
-      <Select ml="auto" maxW="48" value={sort} onChange={(e) => setSort(e.target.value)}>
-        <option value="quality">Quality</option>
-        <option value="follows">Follows</option>
-      </Select>
+    <SimpleView title="Blindspots" center maxW="container.xl">
+      <Flex direction={{ base: "column", md: "row" }} gap="2" alignItems="center">
+        <Text>Pick another user and see what they are seeing that your not.</Text>
+        <Select ml="auto" maxW="48" value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="quality">Quality</option>
+          <option value="follows">Follows</option>
+        </Select>
+      </Flex>
 
       {blindspots.length > 0 ? (
         <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing="4">
@@ -116,6 +108,6 @@ export default function BlindspotHomeView() {
           </AlertDescription>
         </Alert>
       )}
-    </VerticalPageLayout>
+    </SimpleView>
   );
 }

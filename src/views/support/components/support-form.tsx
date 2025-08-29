@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useRef } from "react";
 import { Box, Button, ButtonGroup, Flex, FlexProps, Input, useDisclosure, useToast } from "@chakra-ui/react";
-import { useForm } from "react-hook-form";
-import { EventTemplate, kinds } from "nostr-tools";
 import { unixNow } from "applesauce-core/helpers";
+import { EventTemplate, kinds } from "nostr-tools";
+import { useMemo, useRef } from "react";
+import { useForm } from "react-hook-form";
 
-import MagicTextArea, { RefType } from "../../../components/magic-textarea";
-import useTextAreaUploadFile, { useTextAreaInsertTextWithForm } from "../../../hooks/use-textarea-upload-file";
-import { LightningIcon } from "../../../components/icons";
-import InsertImageButton from "../../new/note/insert-image-button";
-import InsertGifButton from "../../../components/gif/insert-gif-button";
-import TextNoteContents from "../../../components/note/timeline-note/text-note-contents";
-import { TrustProvider } from "../../../providers/local/trust-provider";
 import { getPayRequestForPubkey, PayRequest } from "../../../components/event-zap-modal";
+import InsertGifButton from "../../../components/gif/insert-gif-button";
+import { LightningIcon } from "../../../components/icons";
+import MagicTextArea, { RefType } from "../../../components/magic-textarea";
+import TextNoteContents from "../../../components/note/timeline-note/text-note-contents";
 import { SUPPORT_PUBKEY } from "../../../const";
+import useTextAreaUploadFile, { useTextAreaInsertTextWithForm } from "../../../hooks/use-textarea-upload-file";
+import useUserLNURLMetadata from "../../../hooks/use-user-lnurl-metadata";
 import { useUserInbox } from "../../../hooks/use-user-mailboxes";
 import useUserProfile from "../../../hooks/use-user-profile";
-import useUserLNURLMetadata from "../../../hooks/use-user-lnurl-metadata";
+import { ContentSettingsProvider } from "../../../providers/local/content-settings";
+import InsertImageButton from "../../new/note/insert-image-button";
 
 export default function SupportForm({
   onSubmit,
@@ -65,11 +65,11 @@ export default function SupportForm({
   return (
     <Flex as="form" direction="column" gap="2" onSubmit={submit} flexShrink={0} {...props}>
       {preview.isOpen ? (
-        <TrustProvider trust>
+        <ContentSettingsProvider blurMedia={false}>
           <Box py="2" px="4" borderWidth={1} rounded="md">
             <TextNoteContents event={previewEvent} minH="16" />
           </Box>
-        </TrustProvider>
+        </ContentSettingsProvider>
       ) : (
         <MagicTextArea
           value={getValues().content}
