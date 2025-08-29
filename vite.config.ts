@@ -33,7 +33,7 @@ export default defineConfig({
   },
   server: {
     allowedHosts: [
-      "nostr.btcforplebs.com",
+      "nostrudel.btcforplebs.com",
     ],
   },
   plugins: [
