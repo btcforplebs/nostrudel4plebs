@@ -47,6 +47,8 @@ export const RECOMMENDED_RELAYS = normalizeRelayURLs([
   "wss://nostr.land/",
 ]);
 
+export const RECOMMENDED_JAPANESE_RELAYS = normalizeRelayURLs([
+]);
 
 export const NOSTR_CONNECT_PERMISSIONS = [
   "get_public_key",
