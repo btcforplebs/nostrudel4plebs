@@ -10,7 +10,7 @@ import { menuTheme } from "./components/menu";
 
 const defaultTheme = extendTheme({
   colors: {
-    gray: pallet(chroma.scale(["#d5d5d5", "#fdad01"]).colors(10)),
+    gray: pallet(chroma.scale(["#d5d5d5", "#0e0e0e"]).colors(10)),
   },
   components: {
     Card: cardTheme,

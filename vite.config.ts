@@ -62,12 +62,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 1024 * 1024 * 8,
       },
       manifest: {
-        name: "noStrudel",
+        name: "noStrudel4Plebs",
         short_name: "noStrudel",
         description: "A sandbox for exploring nostr",
         display: "standalone",
         orientation: "portrait-primary",
-        theme_color: "#8DB600",
+        theme_color: "#fdad01",
         categories: ["social"],
         icons: [
           { src: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32" },
